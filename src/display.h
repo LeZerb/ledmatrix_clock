@@ -1,7 +1,8 @@
 #ifndef _DISPLAY_H_
 #define _DISPLAY_H_
 
-#include "ledmatrix.h"
+//includes
+#include "common.h"
 
 //defines
 #define COL0  RA0
@@ -28,6 +29,8 @@
 #define ROW9  RC4
 #define ROW10 RD3
 #define ROW11 RD2
+
+#define PATTERN_SIZE (((NUM_COLS * NUM_ROWS) / 8) + 1)
 
 //typedefs
 typedef enum
@@ -68,9 +71,12 @@ typedef struct
   const unsigned char aucCols[NUM_COLS / 8 + 1];
 }TS_POSITION;
 
+//variables
+extern U8 au8Pattern[];
+
 //declarations
 void vWriteTime(unsigned short long u24TimeInSecs, unsigned char u8Ossi);
 void vTestDisplay(void);
-void vWritePattern(unsigned char *pu8Pattern);
+void vWritePattern();
 
 #endif

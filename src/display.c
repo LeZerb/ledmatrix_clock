@@ -1,9 +1,11 @@
 #include <string.h>
 #include <htc.h>
-#include "ledmatrix.h"
+#include "common.h"
 #include "display.h"
 
 //variables
+U8 au8Pattern[PATTERN_SIZE];
+
 static const TS_POSITION _astPos[eNUM_ENTRIES] =
 {
   //eES_IST
@@ -291,7 +293,7 @@ void vWriteTime(unsigned short long u24TimeInSecs, unsigned char u8Ossi)
                 aucTime[MAX_ITEMS],
                 ucCurrentItem;
 
-  memset(aucTime, 0xFF, sizeof(aucTime));
+  memset(aucTime, 0xFF, MAX_ITEMS);
 
   ucHour = u24TimeInSecs / SECS_IN_HOUR;
 
@@ -519,28 +521,29 @@ void vTestDisplay(void)
   _vOnOffRow(0xFF, 0);
 }
 
-void vWritePattern(unsigned char *pu8Pattern)
+void vWritePattern()
 {
-  unsigned char u8Row, u8Col, u8Byte = 0, u8Bit = 0;
-  static unsigned char _u8LastRow = 0;
-
-  
+  unsigned char u8Row, u8Col, u8Byte = 0, u8Bit = 7;
 
   for (u8Row = 0; u8Row < NUM_ROWS; u8Row++)
   {
     for (u8Col = 0; u8Col < NUM_COLS; u8Col++)
     {
-      _vOnOffCol(u8Col, (pu8Pattern[u8Byte] >> u8Bit) & 0x1);
+      _vOnOffCol(u8Col, (au8Pattern[u8Byte] >> u8Bit) & 0x1);
 
-      u8Bit++;
-
-      if (u8Bit == 0x8)
+      if (u8Bit)
+      {
+        u8Bit--;
+      }
+      else
       {
         u8Byte++;
-        u8Bit = 0;
+        u8Bit = 7;
       }
     }
 
     _vOnOffRow(u8Row, 1);
+    DELAY_MS(1);
+    _vOnOffRow(0xFF, 0);
   }
 }
