@@ -2,6 +2,8 @@
 #define _LEDMATRIX_H_
 
 //defines
+#define DEBUG 0
+
 #define SECS_IN_MIN              (60)
 #define SECS_IN_5_MIN (5*SECS_IN_MIN)
 #define SECS_IN_HOUR (60*SECS_IN_MIN)
@@ -10,9 +12,9 @@
 #define NUM_COLS 11
 #define NUM_ROWS 12
 
-#define _XTAL_FREQ  8000000
-#define WRAPS_A_SEC     122
-#define ITR_RESET_AFTER   8
+#define _XTAL_FREQ  19660800
+#define WRAPS_A_SEC       75
+#define ITR_RESET_AFTER    3
 
 #define DELAY_MS(x) CLRWDT(); __delay_ms((x)); CLRWDT();
 #define DELAY_US(x) CLRWDT(); __delay_us((x)); CLRWDT();

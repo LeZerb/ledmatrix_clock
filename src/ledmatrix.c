@@ -6,7 +6,7 @@
 /*
 ** in-cicuit debugging disabled
 ** low voltage programming disabled
-** fail-safe clock monitor for external clock disabled
+** fail-safe clock monitor for external clock enabled
 ** internal external clock switchover disabled
 ** brown-out reset enabled
 ** data unprotect
@@ -16,7 +16,7 @@
 ** watchdog timer disabled - will be enabled in software
 ** use internal clock - CLKIN/CLKOUT are I/O
 */
-__CONFIG(DEBUGDIS & LVPDIS & FCMDIS & IESODIS & BOREN & DUNPROTECT & UNPROTECT & MCLRDIS & PWRTDIS & WDTDIS & INTIO);
+__CONFIG(DEBUGDIS & LVPDIS & FCMEN & IESODIS & BOREN & DUNPROTECT & UNPROTECT & MCLRDIS & PWRTEN & WDTDIS & HS);
 
 /*
 ** flash write protection is not enabled
@@ -25,7 +25,7 @@ __CONFIG(DEBUGDIS & LVPDIS & FCMDIS & IESODIS & BOREN & DUNPROTECT & UNPROTECT &
 __CONFIG(BORV21);
 
 //variables
-static volatile unsigned short long int _u24SecondsToday = 0;
+static volatile unsigned long int _u24SecondsToday = 81000;//0;
 
 static volatile unsigned char _u8DCFBitsRecvd = 0;
 static volatile unsigned char _u8DCFSyncDone  = 0;
@@ -33,94 +33,28 @@ static volatile unsigned char _u8DCFSyncDone  = 0;
 static volatile unsigned char _u8ValidTime = 0;
 
 //we need room for 2 complete DCF data sets
-static volatile unsigned char _au8DCFData[((2 * 59) % 8) ? (((2 * 59) / 8) + 1) : ((2 * 59) / 8)];
+static volatile unsigned char _au8DCFData[((2 * 59) / 8) + 1];
 
-//static unsigned char _au8Pattern[((NUM_COLS * NUM_ROWS) % 8) ? (((NUM_COLS * NUM_ROWS) / 8) + 1) : ((NUM_COLS * NUM_ROWS) / 8)];
-static unsigned char _au8Pattern[(NUM_COLS % 8) ? ((NUM_COLS / 8) + 1) * NUM_ROWS : (NUM_COLS / 8) * NUM_ROWS];
-
-//all numbers are 3x5
-static const unsigned char _aau8Nums[10][2] =
+void interrupt _vInterrupt(void)
 {
-  //***
-  //* *
-  //* *
-  //* *
-  //***
-  {{0b11110110}, {0b11011110}},
-  //  *
-  //  *
-  //  *
-  //  *
-  //  *
-  {{0b00100100}, {0b10010010}},
-  //***
-  //  *
-  //***
-  //*
-  //***
-  {{0b11100111}, {0b11001110}},
-  //***
-  //  *
-  //***
-  //  *
-  //***
-  {{0b11100111}, {0b10011110}},
-  //* *
-  //* *
-  //***
-  //  *
-  //  *
-  {{0b10110111}, {0b10010010}},
-  //***
-  //*
-  //***
-  //  *
-  //***
-  {{0b11110011}, {0b10011110}},
-  //***
-  //*
-  //***
-  //* *
-  //***
-  {{0b11110011}, {0b11011110}},
-  //***
-  //  *
-  //  *
-  //  *
-  //  *
-  {{0b11100100}, {0b10010010}},
-  //***
-  //* *
-  //***
-  //* *
-  //***
-  {{0b11110111}, {0b11011110}},
-  //***
-  //* *
-  //***
-  //  *
-  //***
-  {{0b11110111}, {0b10011110}}
-};
-
-void /*interrupt*/ _vInterrupt(void)
-{
-  static unsigned short int _u16ClockITR = 0;
+  static unsigned char _u8ClockITR = 0;
 
   if (T0IE && T0IF)
   {
     //we have an interrupt on T0
     T0IF = 0;
 
-    _u16ClockITR++;
+    _u8ClockITR++;
 
-    if (!(_u16ClockITR % WRAPS_A_SEC))
+    if (!(_u8ClockITR % WRAPS_A_SEC))
     {
-      if (_u16ClockITR >= (WRAPS_A_SEC * ITR_RESET_AFTER))
+		volatile unsigned long int test = SECS_A_DAY;
+
+      if (_u8ClockITR >= (WRAPS_A_SEC * ITR_RESET_AFTER))
       {
-        //DCF need to use this in order to find sync
-        //therefore _u16ClockITR needs to run longer than 2 seconds (in this case ITR_RESET_AFTER)
-        _u16ClockITR = 0;
+        //DCF needs to use this in order to find sync
+        //therefore _u8ClockITR needs to run longer than 2 seconds (in this case ITR_RESET_AFTER)
+        _u8ClockITR = 0;
       }
 
       _u24SecondsToday++;
@@ -144,21 +78,34 @@ void /*interrupt*/ _vInterrupt(void)
 
     if (_bRb2 != RB2)
     {
-      static unsigned short int _u16LastTime = 0;
-      unsigned short int        u16TimeSince;
+      static unsigned char _u8LastTime    = 0,
+                           _u8CurrentBit,
+                           _u8CurrentByte;
+      unsigned short int   u16TimeSince;
+
+      #if DEBUG
+        COL0 = !COL0;
+      #endif
 
       _bRb2 = RB2;
 
-      if (_u16ClockITR >= _u16LastTime)
+      if (_u8ClockITR >= _u8LastTime)
       {
-        u16TimeSince = _u16ClockITR - _u16LastTime;
+        u16TimeSince = _u8ClockITR - _u8LastTime;
       }
       else
       {
-        u16TimeSince = _u16ClockITR + (WRAPS_A_SEC * ITR_RESET_AFTER) - _u16LastTime;
+        u16TimeSince = _u8ClockITR + (WRAPS_A_SEC * ITR_RESET_AFTER) - _u8LastTime;
       }
 
-      _u16LastTime = _u16ClockITR;
+      _u8LastTime = _u8ClockITR;
+
+      if (!_u8DCFBitsRecvd)
+      {
+        _u8CurrentBit  = 7;
+        _u8CurrentByte = 0;
+        _au8DCFData[_u8CurrentByte] = 0;
+      }
 
       if (_bRb2 == 0)
       {
@@ -167,27 +114,64 @@ void /*interrupt*/ _vInterrupt(void)
             (u16TimeSince < (WRAPS_A_SEC * 7 / 50)))
         {
           //about 100ms is a '0'
+
+          #if DEBUG
+            COL1 = !COL1;
+          #endif
+
           if (_u8DCFBitsRecvd < (2 * 59))
           {
-            BIT_CLR(_au8DCFData[_u8DCFBitsRecvd / 8], _u8DCFBitsRecvd % 8);
-          }
+            //we do not need to clear the bit here since it is pre-cleared
 
-          _u8DCFBitsRecvd++;
+            _u8DCFBitsRecvd++;
+
+            if (_u8CurrentBit)
+            {
+              _u8CurrentBit--;
+            }
+            else
+            {
+              _u8CurrentBit = 7;
+              _u8CurrentByte++;
+              _au8DCFData[_u8CurrentByte] = 0;
+            }
+          }
         }
         else if ((u16TimeSince > (WRAPS_A_SEC *  8 / 50)) &&
                  (u16TimeSince < (WRAPS_A_SEC * 12 / 50)))
         {
           //about 200ms is a '1'
+
+          #if DEBUG
+            COL2 = !COL2;
+          #endif
+
           if (_u8DCFBitsRecvd < (2 * 59))
           {
-            BIT_SET(_au8DCFData[_u8DCFBitsRecvd / 8], _u8DCFBitsRecvd % 8);
-          }
+            BIT_SET(_au8DCFData[_u8CurrentByte], _u8CurrentBit);
 
-          _u8DCFBitsRecvd++;
+            _u8DCFBitsRecvd++;
+
+            if (_u8CurrentBit)
+            {
+              _u8CurrentBit--;
+            }
+            else
+            {
+              _u8CurrentBit = 7;
+              _u8CurrentByte++;
+              _au8DCFData[_u8CurrentByte] = 0;
+            }
+          }
         }
         else
         {
           //invalid interval length
+
+          #if DEBUG
+            COL10 = !COL10;
+          #endif
+
           _u8DCFSyncDone  = 0;
           _u8DCFBitsRecvd = 0;
         }
@@ -196,6 +180,12 @@ void /*interrupt*/ _vInterrupt(void)
             !_u8DCFSyncDone)
         {
           //something went wrong since there would have had to be a sync before byte 60
+
+          #if DEBUG
+            COL9 = !COL9;
+          #endif
+
+          _u8DCFSyncDone  = 0;
           _u8DCFBitsRecvd = 0;
         }
       }
@@ -207,6 +197,10 @@ void /*interrupt*/ _vInterrupt(void)
         {
           _u8DCFSyncDone  = 1;
 
+          #if DEBUG
+            COL3 = !COL3;
+          #endif
+
           if (_u8DCFBitsRecvd == 59)
           {
             //we have a complete data set available
@@ -214,21 +208,78 @@ void /*interrupt*/ _vInterrupt(void)
 
             if (!_u8ValidTime)
             {
-              _u24SecondsToday = (//first calculate minutes
-                                  (BIT(_au8DCFData, 21) *  1) +
-                                  (BIT(_au8DCFData, 22) *  2) +
-                                  (BIT(_au8DCFData, 23) *  4) +
-                                  (BIT(_au8DCFData, 24) *  8) +
-                                  (BIT(_au8DCFData, 25) * 10) +
-                                  (BIT(_au8DCFData, 26) * 20) +
-                                  (BIT(_au8DCFData, 27) * 40)) * 60 +
-                                 (//and add hours
-                                  (BIT(_au8DCFData, 29) *  1) +
-                                  (BIT(_au8DCFData, 30) *  2) +
-                                  (BIT(_au8DCFData, 31) *  4) +
-                                  (BIT(_au8DCFData, 32) *  8) +
-                                  (BIT(_au8DCFData, 33) * 10) +
-                                  (BIT(_au8DCFData, 34) * 20)) * 60 * 60;
+              unsigned char u8Hour   = 0;
+              unsigned char u8Minute = 0;
+
+              //bit 21
+              if (_au8DCFData[2] & 0x4)
+              {
+                u8Minute += 1;
+              }
+              //bit 22
+              if (_au8DCFData[2] & 0x2)
+              {
+                u8Minute += 2;
+              }
+              //bit 23
+              if (_au8DCFData[2] & 0x1)
+              {
+                u8Minute += 4;
+              }
+              //bit 24
+              if (_au8DCFData[3] & 0x80)
+              {
+                u8Minute += 8;
+              }
+              //bit 25
+              if (_au8DCFData[3] & 0x40)
+              {
+                u8Minute += 10;
+              }
+              //bit 26
+              if (_au8DCFData[3] & 0x20)
+              {
+                u8Minute += 20;
+              }
+              //bit 27
+              if (_au8DCFData[3] & 0x10)
+              {
+                u8Minute += 40;
+              }
+
+              //bit 29
+              if (_au8DCFData[3] & 0x4)
+              {
+                u8Hour += 1;
+              }
+              //bit 30
+              if (_au8DCFData[3] & 0x2)
+              {
+                u8Hour += 2;
+              }
+              //bit 31
+              if (_au8DCFData[3] & 0x1)
+              {
+                u8Hour += 4;
+              }
+              //bit 32
+              if (_au8DCFData[4] & 0x80)
+              {
+                u8Hour += 8;
+              }
+              //bit 33
+              if (_au8DCFData[4] & 0x40)
+              {
+                u8Hour += 10;
+              }
+              //bit 34
+              if (_au8DCFData[4] & 0x20)
+              {
+                u8Hour += 20;
+              }
+
+              _u24SecondsToday = u8Hour * 60 * 60/* +
+                                 u8Minute * 60*/;
 
               _u8ValidTime = 1;
             }
@@ -240,12 +291,21 @@ void /*interrupt*/ _vInterrupt(void)
           }
           else
           {
+            #if DEBUG
+              COL8 = !COL8;
+            #endif
+          
             _u8DCFBitsRecvd = 0;
           }
         }
         else if (u16TimeSince >= (5 * WRAPS_A_SEC / 2))
         {
           //should not happen
+
+          #if DEBUG
+            COL7 = !COL7;
+          #endif
+
           _u8DCFSyncDone  = 0;
           _u8DCFBitsRecvd = 0;
         }
@@ -279,10 +339,10 @@ static void _vInit()
   //prescaler is assigned to timer 0
   PSA = 0;
 
-  //timer prescaler set to 1/32
+  //timer prescaler set to 1/256
   PS2 = 1;
-  PS1 = 0;
-  PS0 = 0;
+  PS1 = 1;
+  PS0 = 1;
 
   //8MHz
   IRCF2 = 1;
@@ -363,33 +423,27 @@ void main(void)
   {
     //clear the watchdog timer
     CLRWDT();
-#if 0
-    if (!_u8ValidTime)
-    {
-      vWriteTime(_u24SecondsToday, 1);
-    }
-    else
-    {
-      unsigned char u8DCFBits    = _u8DCFBitsRecvd,
-                    u8CurrentBit = 0;
 
-      memset(_au8Pattern, 0, sizeof(_au8Pattern));
-
-      while (u8CurrentBit < u8DCFBits)
+    #if DEBUG
+      //use row 0 for debug output
+      ROW0 = 1;
+    #else
+      if (_u8ValidTime)
       {
-        if ((_au8DCFData[u8CurrentBit / 8] >> (u8CurrentBit % 8)) & 0x1)
+        vWriteTime(_u24SecondsToday, 1);
+      }
+      else
+      {
+        unsigned char au8Pattern[((NUM_COLS * NUM_ROWS) / 8) + 1];
+
+        memset(au8Pattern, 0, sizeof(au8Pattern));
+        if (_u24SecondsToday & 0x1)
         {
-          BIT_SET(_au8Pattern[u8CurrentBit / 8], u8CurrentBit % 8);
+          BIT_SET(au8Pattern[0], 0);
         }
 
-        u8CurrentBit++;
+        vWritePattern(au8Pattern);
       }
-
-      vWritePattern(_au8Pattern);
-    }
-#else
-  memset(_au8Pattern, 0xFF, sizeof(_au8Pattern));
-  vWritePattern(_au8Pattern);
-#endif
+    #endif
   }
 }

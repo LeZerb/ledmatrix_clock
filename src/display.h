@@ -55,6 +55,7 @@ typedef enum
   eNEUN,
   eZEHN_H,
   eELF,
+  eEIN,
   eSEX,
   eMITTERNACHT,
   eUHR,
@@ -64,7 +65,7 @@ typedef enum
 typedef struct
 {
   const unsigned char ucRow;
-  const unsigned char aucCols[(NUM_COLS % 8) ? (NUM_COLS / 8 + 1) : (NUM_COLS / 8)];
+  const unsigned char aucCols[NUM_COLS / 8 + 1];
 }TS_POSITION;
 
 //declarations

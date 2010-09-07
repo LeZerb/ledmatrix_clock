@@ -50,6 +50,8 @@ static const TS_POSITION _astPos[eNUM_ENTRIES] =
   {{10}, {0b11110000, 0b00000000}},
   //eELF
   {{6},  {0b11100000, 0b00000000}},
+  //eEIN
+  {{6},  {0b00000111, 0b00000000}},
   //eSEX
   {{6},  {0b00000000, 0b11100000}},
   //eMITTERNACHT
@@ -58,8 +60,75 @@ static const TS_POSITION _astPos[eNUM_ENTRIES] =
   {{10}, {0b00000000, 0b11100000}}
 };
 
+//all numbers are 3x5
+static const unsigned char _aau8Nums[10][2] =
+{
+  //***
+  //* *
+  //* *
+  //* *
+  //***
+  {{0b11110110}, {0b11011110}},
+  //  *
+  //  *
+  //  *
+  //  *
+  //  *
+  {{0b00100100}, {0b10010010}},
+  //***
+  //  *
+  //***
+  //*
+  //***
+  {{0b11100111}, {0b11001110}},
+  //***
+  //  *
+  //***
+  //  *
+  //***
+  {{0b11100111}, {0b10011110}},
+  //* *
+  //* *
+  //***
+  //  *
+  //  *
+  {{0b10110111}, {0b10010010}},
+  //***
+  //*
+  //***
+  //  *
+  //***
+  {{0b11110011}, {0b10011110}},
+  //***
+  //*
+  //***
+  //* *
+  //***
+  {{0b11110011}, {0b11011110}},
+  //***
+  //  *
+  //  *
+  //  *
+  //  *
+  {{0b11100100}, {0b10010010}},
+  //***
+  //* *
+  //***
+  //* *
+  //***
+  {{0b11110111}, {0b11011110}},
+  //***
+  //* *
+  //***
+  //  *
+  //***
+  {{0b11110111}, {0b10011110}}
+};
+
 static void _vOnOffCol(unsigned char ucCol, unsigned char ucOn)
 {
+  ucOn = ucOn ? 1 : 0;
+
   switch (ucCol)
   {
     case 0:
@@ -160,51 +229,51 @@ static void _vOnOffRow(unsigned char ucRow, unsigned char ucOn)
     switch (ucRow)
     {
       case 0:
-      ROW0 = ucOn;
+      ROW0 = 1;
       break;
 
       case 1:
-      ROW1 = ucOn;
+      ROW1 = 1;
       break;
 
       case 2:
-      ROW2 = ucOn;
+      ROW2 = 1;
       break;
 
       case 3:
-      ROW3 = ucOn;
+      ROW3 = 1;
       break;
 
       case 4:
-      ROW4 = ucOn;
+      ROW4 = 1;
       break;
 
       case 5:
-      ROW5 = ucOn;
+      ROW5 = 1;
       break;
 
       case 6:
-      ROW6 = ucOn;
+      ROW6 = 1;
       break;
 
       case 7:
-      ROW7 = ucOn;
+      ROW7 = 1;
       break;
 
       case 8:
-      ROW8 = ucOn;
+      ROW8 = 1;
       break;
 
       case 9:
-      ROW9 = ucOn;
+      ROW9 = 1;
       break;
 
       case 10:
-      ROW10 = ucOn;
+      ROW10 = 1;
       break;
 
       case 11:
-      ROW11 = ucOn;
+      ROW11 = 1;
       break;
 
       default:
@@ -265,7 +334,14 @@ void vWriteTime(unsigned short long u24TimeInSecs, unsigned char u8Ossi)
     
     if (ucMinute < 5)
     {
-      aucTime[ucCurrentItem++] = eZWOELF + ucHour;
+      if (ucHour == 1)
+      {
+        aucTime[ucCurrentItem++] = eEIN;
+      }
+      else
+      {
+        aucTime[ucCurrentItem++] = eZWOELF + ucHour;
+      }
       aucTime[ucCurrentItem++] = eUHR;
     }
     else if (ucMinute < 10)
@@ -356,39 +432,41 @@ void vWriteTime(unsigned short long u24TimeInSecs, unsigned char u8Ossi)
   }
 
   //the last row is following later for minutes 1-4 (border LEDs)
-  for (ucRow = 0; ucRow < (NUM_ROWS - 1); ucRow++)
+  ucCurrentItem = 0;
+
+  _vOnOffCol(0xFF, 0);
+
+  for (ucCurrentItem = 0; ucCurrentItem < MAX_ITEMS; ucCurrentItem++)
   {
-    ucCurrentItem = 0;
-    
-    _vOnOffCol(0xFF, 0);
-
-    for (ucCurrentItem = 0; ucCurrentItem < MAX_ITEMS; ucCurrentItem++)
+    if (aucTime[ucCurrentItem] != 0xFF)
     {
-      if (aucTime[ucCurrentItem] != 0xFF)
+      unsigned char ucCol, ucByte = 0, ucBit = 7;
+
+      ucRow = _astPos[aucTime[ucCurrentItem]].ucRow;
+
+      for (ucCol = 0; ucCol < NUM_COLS; ucCol++)
       {
-        if (_astPos[aucTime[ucCurrentItem]].ucRow == ucRow)
+        CLRWDT();
+
+        _vOnOffCol(ucCol, _astPos[aucTime[ucCurrentItem]].aucCols[ucByte] & (1 << ucBit));
+
+        if (ucBit)
         {
-          unsigned char ucCol;
-          
-          for (ucCol = 0; ucCol < NUM_COLS; ucCol++)
-          {
-            CLRWDT();
-
-            _vOnOffRow(0xFF, 0);
-
-            if ((_astPos[aucTime[ucCurrentItem]].aucCols[ucCol / 8] >> (7 - (ucCol % 8))) & 0b1)
-            {
-              _vOnOffCol(ucCol, 1);
-            }
-          }
+          ucBit--;
+        }
+        else
+        {
+          ucBit = 7;
+          ucByte++;
         }
       }
-    }
 
-    _vOnOffRow(ucRow, 1);
+      _vOnOffRow(ucRow, 1);
+      DELAY_MS(2);
+      _vOnOffRow(0xFF, 0);
+      _vOnOffCol(0xFF, 0);
+    }
   }
-  
-  _vOnOffRow(0xFF, 0);
 
   //write 12th row here (minutes)
   switch (ucMinute % 5)
@@ -443,25 +521,26 @@ void vTestDisplay(void)
 
 void vWritePattern(unsigned char *pu8Pattern)
 {
-  unsigned char u8Row, u8Col, u8Pos = 0, u8BitPos = 0;
+  unsigned char u8Row, u8Col, u8Byte = 0, u8Bit = 0;
+  static unsigned char _u8LastRow = 0;
+
+  
 
   for (u8Row = 0; u8Row < NUM_ROWS; u8Row++)
   {
     for (u8Col = 0; u8Col < NUM_COLS; u8Col++)
     {
-      _vOnOffCol(u8Col, pu8Pattern[u8Pos] & (1 << u8BitPos) ? 1 : 0);
+      _vOnOffCol(u8Col, (pu8Pattern[u8Byte] >> u8Bit) & 0x1);
 
-      u8BitPos++;
+      u8Bit++;
 
-      if (u8BitPos == 0x8)
+      if (u8Bit == 0x8)
       {
-        u8Pos++;
-        u8BitPos = 0;
+        u8Byte++;
+        u8Bit = 0;
       }
     }
 
     _vOnOffRow(u8Row, 1);
-    DELAY_US(40);
-    _vOnOffRow(u8Row, 0);
   }
 }
