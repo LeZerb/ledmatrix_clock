@@ -44,7 +44,7 @@ void vInit()
   PS1 = 1;
   PS0 = 1;
 
-  //8MHz
+  //8MHz - which is not used since we are using an external crystal
   IRCF2 = 1;
   IRCF1 = 1;
   IRCF1 = 1;
@@ -63,43 +63,62 @@ void vInit()
   //ANS10 = 1;
   
   //enable peripheral + A/D interrupt
-  ADIF = 0;
-  ADIE = 1;
-  PEIE = 1;
+  //ADIF = 0;
+  //ADIE = 1;
+  //PEIE = 1;
   
   //configure A/D
   //use FRC
-  ADCS1 = 1;
-  ADCS0 = 1;
+  //ADCS1 = 1;
+  //ADCS0 = 1;
   //use RB1/AN10
-  CHS3  = 1;
-  CHS2  = 0;
-  CHS1  = 1;
-  CHS0  = 0;
+  //CHS3  = 1;
+  //CHS2  = 0;
+  //CHS1  = 1;
+  //CHS0  = 0;
   //right justified 2 bits in ADRESH 8 bits in ADRESL
-  ADFM  = 1;
+  //ADFM  = 1;
   //voltage references are Vss and Vdd
-  VCFG1 = 0;
-  VCFG0 = 0;
+  //VCFG1 = 0;
+  //VCFG0 = 0;
   
+  //initialize output latches to 0
   PORTA = 0;
   PORTB = 0;
   PORTC = 0;
   PORTD = 0;
   PORTE = 0;
   
-  //configure all ports as output
-  TRISA = 0;
-  TRISB = 0;
-  TRISC = 0;
-  TRISD = 0;
-  TRISE = 0;
+  //configure output ports as output
+  OUTPUT0  = 0;
+  OUTPUT1  = 0; 
+  OUTPUT2  = 0;
+  OUTPUT3  = 0;
+  OUTPUT4  = 0;
+  OUTPUT5  = 0;
+  OUTPUT6  = 0;
+  OUTPUT7  = 0;
+  OUTPUT8  = 0;
+  OUTPUT9  = 0;
+  OUTPUT10 = 0;
+  OUTPUT11 = 0;
+  OUTPUT12 = 0;
+  OUTPUT13 = 0;
+  OUTPUT14 = 0;
+  OUTPUT15 = 0;
+  OUTPUT16 = 0;
+  OUTPUT17 = 0;
+  OUTPUT18 = 0;
+  OUTPUT19 = 0;
+  OUTPUT20 = 0;
+  OUTPUT21 = 0;
+  OUTPUT23 = 0;
+  OUTPUT24 = 0;
   
-  //configure RB2 as input for DCF signal
-  TRISB2 = 1;
-
-  //enable interrupt on port RB2
+  //enable interrupt on port RB2 (DCF), RB3 and RB4 (switches) 
   IOCB2 = 1;
+  IOCB3 = 1;
+  IOCB4 = 1;
 
   //enable port B interrupt
   RBIE  = 1;

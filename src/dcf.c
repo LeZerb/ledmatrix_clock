@@ -55,6 +55,16 @@ TE_DCF_RC eDCFAddBit(TE_DCF_ACTION eAction, U8 u8Edge, U16 u16After, U24 *pu24Ti
   static U8  _u8DCFBitsRecvd                 = 0;
   static bit _bSyncDone                      = 0;
 
+  static U16 _u16Workaround = 0;
+
+  if (u16After < 50)
+  {
+    _u16Workaround += u16After;
+    return eDCF_OK;
+  }
+
+  u16After += _u16Workaround;
+
   if (!pu24Time)
   {
     return eDCF_ERROR;
@@ -224,16 +234,18 @@ TE_DCF_RC eDCFAddBit(TE_DCF_ACTION eAction, U8 u8Edge, U16 u16After, U24 *pu24Ti
     }
   }
 
+#if 0
   {
-    U8 u8CurBit, u8Byte = 0, u8Bit = 7;
+    U8 u8CurBit, u8Byte = 0, u8Bit = 7,
+       u8Col = 0, u8Row = 0;
 
-    memset(au8Pattern, 0x00, PATTERN_SIZE);
+	  vClearPattern();
 
     for (u8CurBit = 0; u8CurBit < _u8DCFBitsRecvd; u8CurBit++)
     {
       if ((_au8DCFData[u8Byte] >> u8Bit) & 0x1)
       {
-        BIT_SET(au8Pattern[u8Byte], u8Bit);
+        vSetInPattern(u8Col, u8Row, 1);
       }
 
       if (u8CurBit == 59)
@@ -255,6 +267,7 @@ TE_DCF_RC eDCFAddBit(TE_DCF_ACTION eAction, U8 u8Edge, U16 u16After, U24 *pu24Ti
       }
     }
   }
+#endif
 
   return eRc;
 }

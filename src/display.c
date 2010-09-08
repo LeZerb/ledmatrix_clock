@@ -488,6 +488,7 @@ void vWriteTime(unsigned short long u24TimeInSecs, unsigned char u8Ossi)
   }
 
   _vOnOffRow(NUM_ROWS - 1, 1);
+  DELAY_MS(2);
 
   //disable everything
   _vOnOffRow(0xFF, 0);
@@ -496,29 +497,68 @@ void vWriteTime(unsigned short long u24TimeInSecs, unsigned char u8Ossi)
 
 void vTestDisplay(void)
 {
-  _vOnOffCol(0, 1);
-  _vOnOffCol(1, 1);
-  _vOnOffCol(2, 1);
-  _vOnOffCol(3, 1);
-  _vOnOffCol(4, 1);
-  _vOnOffCol(5, 1);
-  _vOnOffCol(6, 1);
-  _vOnOffCol(7, 1);
-  _vOnOffCol(8, 1);
-  _vOnOffCol(9, 1);
-  _vOnOffCol(10, 1);
-  _vOnOffRow(0, 1);
-  _vOnOffRow(1, 1);
-  _vOnOffRow(2, 1);
-  _vOnOffRow(3, 1);
-  _vOnOffRow(4, 1);
-  _vOnOffRow(5, 1);
-  _vOnOffRow(6, 1);
-  _vOnOffRow(7, 1);
-  _vOnOffRow(8, 1);
-  _vOnOffRow(9, 1);
-  _vOnOffRow(10, 1);
+  U8 u8Row, u8Col;
+
+  for (u8Row = 0; u8Row < NUM_ROWS; u8Row++)
+  {
+    _vOnOffRow(u8Row, 1);
+
+    for (u8Col = 0; u8Col < NUM_COLS; u8Col++)
+    {
+      //switch all columns off
+      _vOnOffCol(0xFF, 0);
+      //switch current column on
+      _vOnOffCol(u8Col, 1);
+
+      DELAY_MS(100);
+    }
+  }
+
   _vOnOffRow(0xFF, 0);
+}
+
+void vClearPattern()
+{
+  memset(au8Pattern, 0, PATTERN_SIZE);
+}
+
+void vSetInPattern(U8 u8Col, U8 u8Row, U8 u8On)
+{
+  U8 u8Byte = ((u8Row * NUM_COLS) + u8Col) / 8,
+     u8Bit  = 7 - (((u8Row * NUM_COLS) + u8Col) % 8);
+
+  if (u8On)
+  {
+    BIT_SET(au8Pattern[u8Byte], u8Bit);
+  }
+  else
+  {
+    BIT_CLR(au8Pattern[u8Byte], u8Bit);
+  }
+}
+
+void vAddNumToPattern(U8 u8Num, U8 u8Col, U8 u8Row)
+{
+  //first line
+  vSetInPattern(u8Col    , u8Row   ,  _aau8Nums[u8Num][0] & 0x80);
+  vSetInPattern(u8Col + 1, u8Row   ,  _aau8Nums[u8Num][0] & 0x40);
+  vSetInPattern(u8Col + 2, u8Row   ,  _aau8Nums[u8Num][0] & 0x20);
+  //second line
+  vSetInPattern(u8Col    , u8Row + 1, _aau8Nums[u8Num][0] & 0x10);
+  vSetInPattern(u8Col + 1, u8Row + 1, _aau8Nums[u8Num][0] & 0x08);
+  vSetInPattern(u8Col + 2, u8Row + 1, _aau8Nums[u8Num][0] & 0x04);
+  //third line
+  vSetInPattern(u8Col    , u8Row + 2, _aau8Nums[u8Num][0] & 0x02);
+  vSetInPattern(u8Col + 1, u8Row + 2, _aau8Nums[u8Num][0] & 0x01);
+  vSetInPattern(u8Col + 2, u8Row + 2, _aau8Nums[u8Num][1] & 0x80);
+  //fourth line
+  vSetInPattern(u8Col    , u8Row + 3, _aau8Nums[u8Num][1] & 0x40);
+  vSetInPattern(u8Col + 1, u8Row + 3, _aau8Nums[u8Num][1] & 0x20);
+  vSetInPattern(u8Col + 2, u8Row + 3, _aau8Nums[u8Num][1] & 0x10);
+  //fifth line
+  vSetInPattern(u8Col    , u8Row + 4, _aau8Nums[u8Num][1] & 0x08);
+  vSetInPattern(u8Col + 1, u8Row + 4, _aau8Nums[u8Num][1] & 0x04);
+  vSetInPattern(u8Col + 2, u8Row + 4, _aau8Nums[u8Num][1] & 0x02);
 }
 
 void vWritePattern()
@@ -543,7 +583,7 @@ void vWritePattern()
     }
 
     _vOnOffRow(u8Row, 1);
-    DELAY_MS(1);
+    DELAY_US(500);
     _vOnOffRow(0xFF, 0);
   }
 }

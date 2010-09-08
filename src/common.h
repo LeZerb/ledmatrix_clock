@@ -4,12 +4,14 @@
 //common includes
 #include <htc.h>
 #include <string.h>
+#include "hardware.h"
 
 //defines
+#define DEBUG_INPUTS  0
 #define DEBUG_DCF     1
 #define DEBUG_DISPLAY 2
 
-//#define DEBUG DEBUG_DCF
+//#define DEBUG DEBUG_INPUTS
 
 #define U8  unsigned char
 #define U16 unsigned short int
@@ -20,17 +22,6 @@
 #define SECS_IN_5_MIN         (5 * SECS_IN_MIN)
 #define SECS_IN_HOUR         (60 * SECS_IN_MIN)
 #define SECS_A_DAY    ((U24) 24 * SECS_IN_HOUR)
-
-#define NUM_COLS (11)
-#define NUM_ROWS (12)
-
-#define DCF_INVERTED (1)
-
-//WRAPS_A_SEC defines how many timer overflows are in one minute
-//this is dependant on clock frequency and timer prescaler
-#define WRAPS_A_SEC       (75)
-
-#define _XTAL_FREQ  (19660800)
 
 #define DELAY_MS(x) CLRWDT(); __delay_ms((x)); CLRWDT();
 #define DELAY_US(x) CLRWDT(); __delay_us((x)); CLRWDT();
