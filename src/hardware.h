@@ -1,7 +1,6 @@
 #ifndef _HARDWARE_H_
 #define _HARDWARE_H_
 
-
 #define _XTAL_FREQ  (19660800)
 
 //WRAPS_A_SEC defines how many timer overflows are in one minute

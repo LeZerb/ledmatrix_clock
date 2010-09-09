@@ -3,6 +3,7 @@
 #include "display.h"
 #include "dcf.h"
 #include "menu.h"
+#include "date.h"
 
 //defines
 #ifndef DEBUG
@@ -14,6 +15,17 @@
   #undef  DEBUG
   #define DEBUG 0
 #endif
+
+//typedefs
+typedef enum
+{
+  eDISP_DCF,
+  eDISP_TIME,
+  eDISP_MENU,
+  eDISP_SECOND,
+  eDISP_DAY,
+  eDISP_YEAR
+}TE_DISPLAY_STATE;
 
 //variables
 static volatile U8  _u8ClkInt = 0;
@@ -56,14 +68,15 @@ void main(void)
 
   while (1)
   {
-    static bit _bValidTime   = 0,
-               _bLastDCF     = 0,
-               _bInMenu      = 0,
-               _bShowSecond  = 0;
-    static U24 _u24SecsToday = 0;
-    static U8  _u8DCFSecs    = 0;
-    U8         u8CurClockInt = _u8ClkInt;
-    TE_MENU_RC eMenuRc = eMENU_OK;
+    static bit              _bValidTime    = 0,          //is the time taht is currently running valid
+                            _bTimeWasValid = 0,          //time is invalidated at 4 o'clock - did we have a valid time
+                            _bLastDCF      = 0;          //last value which was input on DCF pin
+    static TE_DISPLAY_STATE _eDisplayState = eDISP_DCF;  //what is to be displayed on the display
+    static U24              _u24SecsToday  = 0;          //hold the second of the day
+    static TS_DATE          _stDate        = {1, 1, 10}; //hold the current date
+    static U8               _u8DCFSecs     = 0;          //how many second wraps since last DCF in state change
+    U8                      u8CurClockInt  = _u8ClkInt;  //what is the current clock interrupt count
+    TE_MENU_RC              eMenuRc        = eMENU_OK;   //what does the menu system tell us
 
     //clear the watchdog timer
     CLRWDT();
@@ -91,17 +104,26 @@ void main(void)
       }
     }
 
-    if (//automatically set the clock if we do not have the current time
-        !_bValidTime ||
-        //and every night at 4 o'clock
+    //get the time every night at 4 o'clock
+    if (_bValidTime &&
         (_u24SecsToday == (SECS_IN_HOUR * 4)))
     {
-      DCF_POWER = 1;
+      //we need to invalidate the time here
+      //since showing the current time does not allow correct DCF receiving
+      //interruptions would disturb the DCF input signals
+      _bTimeWasValid = 1;
+      _bValidTime    = 0;
     }
 
+    //automatically set the clock if we do not have a valid time
+    if (!_bValidTime)
+    {
+      DCF_POWER   = 1;
+    }
+
+    //has there been a change on the DCF input
     if (_bLastDCF != _bDCF)
     {
-      //there was a change on the DCF input
       static U8 _u8LastClkInt = 0;
       U24       u24TimeSince;
 
@@ -130,52 +152,45 @@ void main(void)
       _u8DCFSecs    = 0;
       _u8LastClkInt = u8CurClockInt;
 
-      eDCFRc = eDCFAddBit(_bValidTime ? eDCF_UPDATE_TIME : eDCF_GET_INITIAL_TIME,
-                          _bLastDCF, (U16) u24TimeSince, &_u24SecsToday);
+      //add a bit to the DCF calculation and 
+      eDCFRc = eDCFAddBit(_bLastDCF, (U16) u24TimeSince, &_u24SecsToday, &_stDate);
 
       if (eDCFRc == eDCF_TIME_SET)
-      {
-        _bValidTime = 1;
-      }
-      else if (eDCFRc == eDCF_ALL_DONE)
       {
         _bValidTime = 1;
 
         //disable the DCF receiver
         DCF_POWER   = 0;
       }
-      else if (_bValidTime &&
+      else if (_bTimeWasValid &&
                _u24SecsToday > SECS_IN_HOUR * 5)
       {
         //we have tried to update the time for an hour now -> give up
+        _bValidTime = 1;
         DCF_POWER   = 0;
       }
     }
 
+    //has someone pushed the menu button
     if (_bLastSWMenu != _bSWMenu)
     {
       _bLastSWMenu = _bSWMenu;
 
+      //only handle button release
       if (_bLastSWMenu)
       {
-        #if DEBUG
-          COL8 = !COL8;
-        #endif
-
         eMenuRc = eHandleButton(eBUTTON_MENU);
       }
     }
-
+    
+    //has someone pushed the set button
     if (_bLastSWSet != _bSWSet)
     {
       _bLastSWSet = _bSWSet;
-
+      
+      //only handle button release
       if (_bLastSWSet)
       {
-        #if DEBUG
-          COL9 = !COL9;
-        #endif
-
         eMenuRc = eHandleButton(eBUTTON_SET);
       }
     }
@@ -185,36 +200,79 @@ void main(void)
       _u24SecsToday = u24MenuGetTime();
       _bValidTime   = 1;
     }
+    else if (eMenuRc == eMENU_DATE_AVAIL)
+    {
+      vMenuGetDate(&_stDate);
+    }
     else if (eMenuRc == eMENU_TIME_INVALID)
     {
-      _bValidTime = 0;
+      _bValidTime     = 0;
+      _stDate.u8Day   = 1;
+      _stDate.u8Month = 1;
+      _stDate.u8Year  = 10;
     }
-    else if (eMenuRc == eMENU_TOGGLE_SECOND)
+    else if (eMenuRc == eMENU_SHOW_SECOND)
     {
-      _bShowSecond = !_bShowSecond;
+      _eDisplayState = eDISP_SECOND;
+      vClearPattern();
+    }
+    else if (eMenuRc == eMENU_SHOW_DAY)
+    {
+      _eDisplayState = eDISP_DAY;
+      vClearPattern();
+    }
+    else if (eMenuRc == eMENU_SHOW_YEAR)
+    {
+      _eDisplayState = eDISP_YEAR;
       vClearPattern();
     }
     else if (eMenuRc == eMENU_ENTERED)
     {
-      _bInMenu = 1;
+      _eDisplayState = eDISP_MENU;
     }
     else if (eMenuRc == eMENU_LEFT)
     {
-      _bInMenu = 0;
+      if (_bValidTime)
+      {
+        _eDisplayState = eDISP_TIME;
+      }
+      else
+      {
+        _eDisplayState = eDISP_DCF;
+      }
     }
 
     #if DEBUG
       ROW0 = 1;
     #else
-      if (_bInMenu)
+      if (_eDisplayState == eDISP_MENU)
       {
+        //write the preconfigured menu
         vWritePattern();
       }
-      else if (_bShowSecond)
+      else if (_eDisplayState == eDISP_SECOND)
       {
         //show current second
         vAddNumToPattern((_u24SecsToday % 60) / 10, 2, 3);
-        vAddNumToPattern((_u24SecsToday % 10) % 10, 6, 3);
+        vAddNumToPattern((_u24SecsToday % 60) % 10, 6, 3);
+        vWritePattern();
+      }
+      else if (_eDisplayState == eDISP_DAY)
+      {
+        //show day and month
+        vAddNumToPattern(_stDate.u8Day   / 10, 2, 0);
+        vAddNumToPattern(_stDate.u8Day   % 10, 6, 0);
+        vAddNumToPattern(_stDate.u8Month / 10, 2, 6);
+        vAddNumToPattern(_stDate.u8Month % 10, 6, 6);
+        vWritePattern();
+      }
+      else if (_eDisplayState == eDISP_YEAR)
+      {
+        //show current year 20xx
+        vAddNumToPattern(2                   , 2, 0);
+        vAddNumToPattern(0                   , 6, 0);
+        vAddNumToPattern(_stDate.u8Year / 10, 2, 6);
+        vAddNumToPattern(_stDate.u8Year % 10, 6, 6);
         vWritePattern();
       }
       else if (_bValidTime)
@@ -227,7 +285,7 @@ void main(void)
         //vSetInPattern(NUM_COLS - 1, NUM_ROWS - 1, _bLastDCF);
         //vWritePattern();
 
-        ROW11 = 1;
+        ROW10 = 1;
         COL10 = _bLastDCF;
       }
     #endif

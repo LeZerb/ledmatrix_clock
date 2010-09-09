@@ -474,21 +474,28 @@ void vWriteTime(unsigned short long u24TimeInSecs, unsigned char u8Ossi)
   switch (ucMinute % 5)
   {
     case 4:
-    _vOnOffCol(NUM_COLS - 1, 1);
-    //fall through
-    case 3:
-    _vOnOffCol(1, 1);
-    //fall through
-    case 2:
-    _vOnOffCol(NUM_COLS - 2, 1);
-    //fall through
-    case 1:
-    _vOnOffCol(0, 1);
-    break;
-  }
+      _vOnOffCol(1, 1);
+      //fall through
 
-  _vOnOffRow(NUM_ROWS - 1, 1);
-  DELAY_MS(2);
+    case 3:
+      _vOnOffCol(NUM_COLS - 1, 1);
+      //fall through
+
+    case 2:
+      _vOnOffCol(NUM_COLS - 2, 1);
+      //fall through
+
+    case 1:
+      _vOnOffCol(0, 1);
+      
+      _vOnOffRow(NUM_ROWS - 1, 1);
+      DELAY_MS(2);
+
+      break;
+
+    default:
+      break;
+  }
 
   //disable everything
   _vOnOffRow(0xFF, 0);
@@ -563,7 +570,7 @@ void vAddNumToPattern(U8 u8Num, U8 u8Col, U8 u8Row)
 
 void vWritePattern()
 {
-  unsigned char u8Row, u8Col, u8Byte = 0, u8Bit = 7;
+  U8 u8Row, u8Col, u8Byte = 0, u8Bit = 7;
 
   for (u8Row = 0; u8Row < NUM_ROWS; u8Row++)
   {
@@ -583,7 +590,7 @@ void vWritePattern()
     }
 
     _vOnOffRow(u8Row, 1);
-    DELAY_US(500);
+    DELAY_US(100);
     _vOnOffRow(0xFF, 0);
   }
 }

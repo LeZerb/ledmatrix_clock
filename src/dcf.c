@@ -1,6 +1,7 @@
 #include "common.h"
 #include "dcf.h"
 #include "display.h"
+#include "date.h"
 
 #ifndef DEBUG
   #define DEBUG 0
@@ -46,7 +47,50 @@ void _vCalcTime(U8 *pu8DCFData, U24 *pu24Time)
   *pu24Time = (U24) u8Hour * SECS_IN_HOUR + u8Minute * SECS_IN_MIN;
 }
 
-TE_DCF_RC eDCFAddBit(TE_DCF_ACTION eAction, U8 u8Edge, U16 u16After, U24 *pu24Time)
+static void _vCalcDate(U8 *pu8DCFData, TS_DATE *pstDate)
+{
+  if (!pu8DCFData ||
+      !pstDate)
+  {
+    return;
+  }
+
+  //reset the date since we are calculating a new date
+  pstDate->u8Day   = 0;
+  pstDate->u8Month = 0;
+  pstDate->u8Year  = 0;
+
+  //00000000 00000000 00000000 00000000 00001111 11000111 11111111 11000000
+  //0        8        16       24       32       40       48       56
+  //0        1        2        3        4        5        6        7
+
+  //bits 36–41 code the day
+  pstDate->u8Day += (pu8DCFData[4] & 0x08) ?  1 : 0;
+  pstDate->u8Day += (pu8DCFData[4] & 0x04) ?  2 : 0;
+  pstDate->u8Day += (pu8DCFData[4] & 0x02) ?  4 : 0;
+  pstDate->u8Day += (pu8DCFData[4] & 0x01) ?  8 : 0;
+  pstDate->u8Day += (pu8DCFData[5] & 0x80) ? 10 : 0;
+  pstDate->u8Day += (pu8DCFData[5] & 0x40) ? 20 : 0;
+
+  //bits 45–49 code the month
+  pstDate->u8Month += (pu8DCFData[5] & 0x04) ?  1 : 0;
+  pstDate->u8Month += (pu8DCFData[5] & 0x02) ?  2 : 0;
+  pstDate->u8Month += (pu8DCFData[5] & 0x01) ?  4 : 0;
+  pstDate->u8Month += (pu8DCFData[6] & 0x80) ?  8 : 0;
+  pstDate->u8Month += (pu8DCFData[6] & 0x40) ? 10 : 0;
+
+  //bits 50–57 code the year
+  pstDate->u8Year += (pu8DCFData[6] & 0x20) ?  1 : 0;
+  pstDate->u8Year += (pu8DCFData[6] & 0x10) ?  2 : 0;
+  pstDate->u8Year += (pu8DCFData[6] & 0x08) ?  4 : 0;
+  pstDate->u8Year += (pu8DCFData[6] & 0x04) ?  8 : 0;
+  pstDate->u8Year += (pu8DCFData[6] & 0x02) ? 10 : 0;
+  pstDate->u8Year += (pu8DCFData[6] & 0x01) ? 20 : 0;
+  pstDate->u8Year += (pu8DCFData[7] & 0x80) ? 40 : 0;
+  pstDate->u8Year += (pu8DCFData[7] & 0x40) ? 80 : 0;
+}
+
+TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, U24 *pu24Time, TS_DATE *pstDate)
 {
   TE_DCF_RC eRc = eDCF_OK;
 
@@ -54,16 +98,6 @@ TE_DCF_RC eDCFAddBit(TE_DCF_ACTION eAction, U8 u8Edge, U16 u16After, U24 *pu24Ti
   static U8  _au8DCFData[2 * ((59 / 8) + 1)] = {0};
   static U8  _u8DCFBitsRecvd                 = 0;
   static bit _bSyncDone                      = 0;
-
-  static U16 _u16Workaround = 0;
-
-  if (u16After < 50)
-  {
-    _u16Workaround += u16After;
-    return eDCF_OK;
-  }
-
-  u16After += _u16Workaround;
 
   if (!pu24Time)
   {
@@ -80,7 +114,8 @@ TE_DCF_RC eDCFAddBit(TE_DCF_ACTION eAction, U8 u8Edge, U16 u16After, U24 *pu24Ti
     if (u16After > 1750 &&
         u16After < 1950)
     {
-      static U24 _u24FirstTime = 0;
+      static U24     _u24FirstTime = 0;
+      static TS_DATE _stFirstDate  = {1, 1, 10};
 
       //a sync event has occurred
       _bSyncDone = 1;
@@ -93,39 +128,40 @@ TE_DCF_RC eDCFAddBit(TE_DCF_ACTION eAction, U8 u8Edge, U16 u16After, U24 *pu24Ti
       {
         //we can now set the time now
         _vCalcTime(_au8DCFData, &_u24FirstTime);
-
-        if (eAction == eDCF_GET_INITIAL_TIME)
-        {
-          #if DEBUG
-            COL3 = !COL3;
-          #endif
-
-          *pu24Time = _u24FirstTime;
-          eRc = eDCF_TIME_SET;
-        }
+        _vCalcDate(_au8DCFData, &_stFirstDate);
       }
       else if (_u8DCFBitsRecvd == (2 * 59))
       {
-        U24 u24TimeNow;
+        U24     u24TimeNow;
+        TS_DATE stDateNow;
 
-        //we need to check if the time matches the previous time
-        //and if it does we can set the time and return with return code done
         _vCalcTime(&_au8DCFData[(59 / 8) + 1], &u24TimeNow);
-
-        if (((_u24FirstTime + SECS_IN_MIN) == u24TimeNow) ||
-            ((_u24FirstTime == (SECS_A_DAY - SECS_IN_MIN)) && u24TimeNow == 0))
+        _vCalcDate(&_au8DCFData[(59 / 8) + 1], &stDateNow);
+        
+        //we need to check if the time matches the previous time
+        //and if it does we can set the time
+        if (((_u24FirstTime + SECS_IN_MIN) == u24TimeNow) &&
+            (_stFirstDate.u8Day   == stDateNow.u8Day)   &&
+            (_stFirstDate.u8Month == stDateNow.u8Month) &&
+            (_stFirstDate.u8Year  == stDateNow.u8Year))
         {
           #if DEBUG
             COL4 = !COL4;
           #endif
 
           *pu24Time = u24TimeNow;
-          eRc = eDCF_ALL_DONE;
+          *pstDate  = stDateNow;
+          eRc = eDCF_TIME_SET;
         }
         else
         {
+          //copy the last DCF data set to the start and wait for a second set of data
           memcpy(_au8DCFData, &_au8DCFData[(59 / 8) + 1], (59 / 8) + 1);
+          //set these 59 bits as valid
           _u8DCFBitsRecvd = 59;
+          //remember the time that was calculated just now for the next comparison
+          _u24FirstTime   = u24TimeNow;
+          _stFirstDate    = stDateNow;
         }
       }
       else
@@ -233,41 +269,6 @@ TE_DCF_RC eDCFAddBit(TE_DCF_ACTION eAction, U8 u8Edge, U16 u16After, U24 *pu24Ti
       #endif
     }
   }
-
-#if 0
-  {
-    U8 u8CurBit, u8Byte = 0, u8Bit = 7,
-       u8Col = 0, u8Row = 0;
-
-	  vClearPattern();
-
-    for (u8CurBit = 0; u8CurBit < _u8DCFBitsRecvd; u8CurBit++)
-    {
-      if ((_au8DCFData[u8Byte] >> u8Bit) & 0x1)
-      {
-        vSetInPattern(u8Col, u8Row, 1);
-      }
-
-      if (u8CurBit == 59)
-      {
-        u8Byte = 59 / 8 + 1;
-        u8Bit  = 7;
-      }
-      else
-      {
-        if (u8Bit)
-        {
-          u8Bit--;
-        }
-        else
-        {
-          u8Bit = 7;
-          u8Byte ++;
-        }
-      }
-    }
-  }
-#endif
 
   return eRc;
 }

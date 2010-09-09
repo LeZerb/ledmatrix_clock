@@ -14,7 +14,10 @@ typedef enum
   eMENU_ITEM_MONTH,
   eMENU_ITEM_YEAR,
   eMENU_ITEM_INVALIDATE_TIME,
-  eMENU_ITEM_TEST_DISPLAY
+  eMENU_ITEM_TEST_DISPLAY,
+  eMENU_ITEM_SHOW_SECOND,
+  eMENU_ITEM_SHOW_DAY,
+  eMENU_ITEM_SHOW_YEAR
 }
 TE_MENU_STATE;
 
@@ -128,7 +131,7 @@ TE_MENU_RC eHandleButton(TE_BUTTONS eButton)
       //increment year
       _u8Year++;
 
-      if (_u8Year == 100)
+      if (_u8Year == 50)
       {
         _u8Year = 10;
       }
@@ -142,9 +145,28 @@ TE_MENU_RC eHandleButton(TE_BUTTONS eButton)
     if (_eCurMenuItem == eMENU_ITEM_NIRVANA)
     {
       //toggle display of current second of minute
-      eRc = eMENU_TOGGLE_SECOND;
+      _eCurMenuItem = eMENU_ITEM_SHOW_SECOND;
+      eRc           = eMENU_SHOW_SECOND;
     }
-    if (_eCurMenuItem == eMENU_ITEM_TIME)
+    else if (_eCurMenuItem == eMENU_ITEM_SHOW_SECOND)
+    {
+      //toggle display of current day and month
+      _eCurMenuItem = eMENU_ITEM_SHOW_DAY;
+      eRc           = eMENU_SHOW_DAY;
+    }
+    else if (_eCurMenuItem == eMENU_ITEM_SHOW_DAY)
+    {
+      //toggle display of current year
+      _eCurMenuItem = eMENU_ITEM_SHOW_YEAR;
+      eRc           = eMENU_SHOW_YEAR;
+    }
+    else if (_eCurMenuItem == eMENU_ITEM_SHOW_YEAR)
+    {
+      //leave the menu state
+      _eCurMenuItem = eMENU_ITEM_NIRVANA;
+      eRc           = eMENU_LEFT;
+    }
+    else if (_eCurMenuItem == eMENU_ITEM_TIME)
     {
       //enter submenu for setting the hour
       _eCurMenuItem = eMENU_ITEM_HOUR;
@@ -201,11 +223,44 @@ TE_MENU_RC eHandleButton(TE_BUTTONS eButton)
     }
     else if (_eCurMenuItem == eMENU_ITEM_YEAR)
     {
-      //go back to main menu
-      _eCurMenuItem = eMENU_ITEM_DATE;
-      vClearPattern();
+      TS_DATE stDate;
 
-      vSetInPattern(1, 0, 1);
+      stDate.u8Day   = _u8Day;
+      stDate.u8Month = _u8Month;
+      stDate.u8Year  = _u8Year;
+
+      //check if the configured date is valid
+      if (!u8IsValidDate(&stDate))
+      {
+        //this month does not have the day selected (29, 30, 31)
+        stDate.u8Day--;
+
+        while (!u8IsValidDate(&stDate))
+        {
+          stDate.u8Day--;
+        }
+
+        _u8Day = stDate.u8Day;
+
+        //go back to configuring the day
+        _eCurMenuItem = eMENU_ITEM_DAY;
+
+        vClearPattern();
+        vSetInPattern(0, 1, 1);
+        vSetInPattern(1, 1, 1);
+        vAddNumToPattern(_u8Day / 10, 2, 3);
+        vAddNumToPattern(_u8Day % 10, 6, 3);
+      }
+      else
+      {
+        //go back to main menu
+        _eCurMenuItem = eMENU_ITEM_DATE;
+        vClearPattern();
+
+        vSetInPattern(0, 1, 1);
+        
+        eRc = eMENU_DATE_AVAIL;
+      }
     }
     else if (_eCurMenuItem == eMENU_ITEM_INVALIDATE_TIME)
     {
@@ -225,4 +280,16 @@ TE_MENU_RC eHandleButton(TE_BUTTONS eButton)
 U24 u24MenuGetTime(void)
 {
   return (_u8Hour * (U24) SECS_IN_HOUR + _u8Minute * SECS_IN_MIN);
+}
+
+void vMenuGetDate(TS_DATE *pstDate)
+{
+  if (!pstDate)
+  {
+    return;
+  }
+
+  pstDate->u8Day   = _u8Day;
+  pstDate->u8Month = _u8Month;
+  pstDate->u8Year  = _u8Year;
 }
