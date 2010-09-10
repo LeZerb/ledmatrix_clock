@@ -5,6 +5,7 @@
 //typedefs
 typedef enum
 {
+  //do not change menu item order
   eMENU_ITEM_NIRVANA,
   eMENU_ITEM_TIME,
   eMENU_ITEM_HOUR,
@@ -17,264 +18,285 @@ typedef enum
   eMENU_ITEM_TEST_DISPLAY,
   eMENU_ITEM_SHOW_SECOND,
   eMENU_ITEM_SHOW_DAY,
-  eMENU_ITEM_SHOW_YEAR
-}
-TE_MENU_STATE;
+  eMENU_ITEM_SHOW_YEAR,
+  eMENU_ITEM_COUNT
+}TE_MENU_STATE;
 
-static TE_MENU_STATE _eCurMenuItem = eMENU_ITEM_NIRVANA;
-
-static U8 _u8Hour = 0, _u8Minute = 0, _u8Day = 1, _u8Month = 1, _u8Year = 10;
-
-TE_MENU_RC eHandleButton(TE_BUTTONS eButton)
+typedef enum
 {
-  TE_MENU_RC eRc = eMENU_OK;
+  eMENU_ACTION_NO_ACTION,
+  eMENU_ACTION_CHANGE_STATE,
+  eMENU_ACTION_DO_STUFF
+}TE_MENU_ACTION;
 
-  if (eButton == eBUTTON_MENU)
+typedef struct
+{
+  TE_MENU_ACTION eAction;
+  TE_MENU_STATE  eNextMenuState;
+  TE_MENU_RC     eRc;
+}TS_MENU_ACTIONS;
+
+//variables
+
+//what do we want to do in a certain state when a button is pressed
+static const TS_MENU_ACTIONS _astMenuActions[eMENU_ITEM_COUNT][eBUTTON_COUNT] =
+{
+  //eMENU_ITEM_NIRVANA
+  {{eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_TIME           , eMENU_RC_ENTERED}   ,
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_SHOW_SECOND    , eMENU_RC_OK}},
+  //eMENU_ITEM_TIME
+  {{eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_DATE           , eMENU_RC_OK}        ,
+  {eMENU_ACTION_CHANGE_STATE , eMENU_ITEM_HOUR           , eMENU_RC_OK}},
+  //eMENU_ITEM_HOUR
+  {{eMENU_ACTION_DO_STUFF    , eMENU_ITEM_HOUR           , eMENU_RC_OK}        ,
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_MINUTE         , eMENU_RC_OK}},
+  //eMENU_ITEM_MINUTE
+  {{eMENU_ACTION_DO_STUFF    , eMENU_ITEM_MINUTE         , eMENU_RC_OK}        ,
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_TIME           , eMENU_RC_TIME_AVAIL}},
+  //eMENU_ITEM_DATE
+  {{eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_INVALIDATE_TIME, eMENU_RC_OK}        ,
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_DAY            , eMENU_RC_OK}},
+  //eMENU_ITEM_DAY
+  {{eMENU_ACTION_DO_STUFF    , eMENU_ITEM_DAY            , eMENU_RC_OK}        ,
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_MONTH          , eMENU_RC_OK}},
+  //eMENU_ITEM_MONTH
+  {{eMENU_ACTION_DO_STUFF    , eMENU_ITEM_MONTH          , eMENU_RC_OK}        ,
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_YEAR           , eMENU_RC_OK}},
+  //eMENU_ITEM_YEAR
+  {{eMENU_ACTION_DO_STUFF    , eMENU_ITEM_YEAR           , eMENU_RC_OK}        ,
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_DATE           , eMENU_RC_DATE_AVAIL}},
+  //eMENU_ITEM_INVALIDATE_TIME
+  {{eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_TEST_DISPLAY   , eMENU_RC_OK}        ,
+   {eMENU_ACTION_NO_ACTION   , eMENU_ITEM_DATE           , eMENU_RC_TIME_INVALID}},
+  //eMENU_ITEM_TEST_DISPLAY
+  {{eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_NIRVANA        , eMENU_RC_LEFT}      ,
+   {eMENU_ACTION_DO_STUFF    , eMENU_ITEM_TEST_DISPLAY   , eMENU_RC_OK}},
+  //eMENU_ITEM_SHOW_SECOND
+  {{eMENU_ACTION_NO_ACTION   , eMENU_ITEM_SHOW_SECOND    , eMENU_RC_OK}        ,
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_SHOW_DAY       , eMENU_RC_OK}},
+  //eMENU_ITEM_SHOW_DAY
+  {{eMENU_ACTION_NO_ACTION   , eMENU_ITEM_SHOW_DAY       , eMENU_RC_OK}        ,
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_SHOW_YEAR      , eMENU_RC_OK}},
+  //eMENU_ITEM_SHOW_YEAR
+  {{eMENU_ACTION_NO_ACTION   , eMENU_ITEM_SHOW_YEAR      , eMENU_RC_OK}        ,
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_NIRVANA        , eMENU_RC_LEFT}}
+};
+
+static TE_MENU_STATE _eCurMenuState = eMENU_ITEM_NIRVANA;
+static U8            _u8Hour        = 0,
+                     _u8Minute      = 0;
+static TS_DATE       _stDate        = {1, 1, 10};
+
+//implementation
+
+TE_MENU_RC eHandleButton(TE_BUTTONS eButton, U24 u24CurTime, TS_DATE *pstCurDate)
+{
+  TE_MENU_STATE eMenuStateBefore = _eCurMenuState;
+
+  if (eButton >= eBUTTON_COUNT)
   {
-    if (_eCurMenuItem == eMENU_ITEM_NIRVANA)
-    {      
-      //enter the initial menu state
-      _eCurMenuItem = eMENU_ITEM_TIME;
-      vClearPattern();
-
-      vSetInPattern(0, 0, 1);
-      
-      eRc = eMENU_ENTERED;
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_TIME)
-    {
-      //advance to next menu item (date)
-      _eCurMenuItem = eMENU_ITEM_DATE;
-      vClearPattern();
-
-      vSetInPattern(0, 1, 1);
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_DATE)
-    {
-      //advance to next menu item (display test)
-      _eCurMenuItem = eMENU_ITEM_INVALIDATE_TIME;
-      vClearPattern();
-
-      vSetInPattern(0, 9, 1);
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_INVALIDATE_TIME)
-    {
-      //advance to next menu item (display test)
-      _eCurMenuItem = eMENU_ITEM_TEST_DISPLAY;
-      vClearPattern();
-
-      vSetInPattern(0, 10, 1);
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_TEST_DISPLAY)
-    {
-      //we are now leaving the menu
-      _eCurMenuItem = eMENU_ITEM_NIRVANA;
-
-      vClearPattern();
-
-      eRc = eMENU_LEFT;
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_HOUR)
-    {
-      //increment hour
-      _u8Hour++;
-
-      if (_u8Hour == 24)
-      {
-        _u8Hour = 0;
-      }
-
-      vAddNumToPattern(_u8Hour / 10, 2, 3);
-      vAddNumToPattern(_u8Hour % 10, 6, 3);
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_MINUTE)
-    {
-      //increment minute
-      _u8Minute++;
-
-      if (_u8Minute == 60)
-      {
-        _u8Minute = 0;
-      }
-
-      vAddNumToPattern(_u8Minute / 10, 2, 3);
-      vAddNumToPattern(_u8Minute % 10, 6, 3);
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_DAY)
-    {
-      //increment day
-      _u8Day++;
-
-      if (_u8Day == 32)
-      {
-        _u8Day = 1;
-      }
-
-      vAddNumToPattern(_u8Day / 10, 2, 3);
-      vAddNumToPattern(_u8Day % 10, 6, 3);
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_MONTH)
-    {
-      //increment month
-      _u8Month++;
-
-      if (_u8Month == 13)
-      {
-        _u8Month = 1;
-      }
-
-      vAddNumToPattern(_u8Month / 10, 2, 3);
-      vAddNumToPattern(_u8Month % 10, 6, 3);
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_YEAR)
-    {
-      //increment year
-      _u8Year++;
-
-      if (_u8Year == 50)
-      {
-        _u8Year = 10;
-      }
-
-      vAddNumToPattern(_u8Year / 10, 2, 3);
-      vAddNumToPattern(_u8Year % 10, 6, 3);
-    }
+    return eMENU_RC_ERROR;
   }
-  else //button set
+
+  if (_astMenuActions[_eCurMenuState][eButton].eAction == eMENU_ACTION_DO_STUFF)
   {
-    if (_eCurMenuItem == eMENU_ITEM_NIRVANA)
+    switch (_eCurMenuState)
     {
-      //toggle display of current second of minute
-      _eCurMenuItem = eMENU_ITEM_SHOW_SECOND;
-      eRc           = eMENU_SHOW_SECOND;
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_SHOW_SECOND)
-    {
-      //toggle display of current day and month
-      _eCurMenuItem = eMENU_ITEM_SHOW_DAY;
-      eRc           = eMENU_SHOW_DAY;
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_SHOW_DAY)
-    {
-      //toggle display of current year
-      _eCurMenuItem = eMENU_ITEM_SHOW_YEAR;
-      eRc           = eMENU_SHOW_YEAR;
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_SHOW_YEAR)
-    {
-      //leave the menu state
-      _eCurMenuItem = eMENU_ITEM_NIRVANA;
-      eRc           = eMENU_LEFT;
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_TIME)
-    {
-      //enter submenu for setting the hour
-      _eCurMenuItem = eMENU_ITEM_HOUR;
-
-      vSetInPattern(1, 0, 1);
-      vAddNumToPattern(_u8Hour / 10, 2, 3);
-      vAddNumToPattern(_u8Hour % 10, 6, 3);
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_HOUR)
-    {
-      //enter submenu for setting the minute
-      _eCurMenuItem = eMENU_ITEM_MINUTE;
-
-      vSetInPattern(2, 0, 1);
-      vAddNumToPattern(_u8Minute / 10, 2, 3);
-      vAddNumToPattern(_u8Minute % 10, 6, 3);
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_MINUTE)
-    {
-      //go back to main menu
-      _eCurMenuItem = eMENU_ITEM_TIME;
-      vClearPattern();
-
-      vSetInPattern(0, 0, 1);
-
-      eRc = eMENU_TIME_AVAIL;
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_DATE)
-    {
-      //enter submenu for setting the day
-      _eCurMenuItem = eMENU_ITEM_DAY;
-
-      vSetInPattern(1, 1, 1);
-      vAddNumToPattern(_u8Day / 10, 2, 3);
-      vAddNumToPattern(_u8Day % 10, 6, 3);
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_DAY)
-    {
-      //enter submenu for setting the month
-      _eCurMenuItem = eMENU_ITEM_MONTH;
-
-      vSetInPattern(2, 1, 1);
-      vAddNumToPattern(_u8Month / 10, 2, 3);
-      vAddNumToPattern(_u8Month % 10, 6, 3);
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_MONTH)
-    {
-      //enter submenu for setting the year
-      _eCurMenuItem = eMENU_ITEM_YEAR;
-
-      vSetInPattern(3, 1, 1);
-      vAddNumToPattern(_u8Year / 10, 2, 3);
-      vAddNumToPattern(_u8Year % 10, 6, 3);
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_YEAR)
-    {
-      TS_DATE stDate;
-
-      stDate.u8Day   = _u8Day;
-      stDate.u8Month = _u8Month;
-      stDate.u8Year  = _u8Year;
-
-      //check if the configured date is valid
-      if (!u8IsValidDate(&stDate))
-      {
-        //this month does not have the day selected (29, 30, 31)
-        stDate.u8Day--;
-
-        while (!u8IsValidDate(&stDate))
+      case eMENU_ITEM_DAY:
         {
-          stDate.u8Day--;
+          //increment day
+          _stDate.u8Day++;
+    
+          if (_stDate.u8Day == 32)
+          {
+            _stDate.u8Day = 1;
+          }
+    
+          vAddNumToPattern(_stDate.u8Day / 10, 2, 3);
+          vAddNumToPattern(_stDate.u8Day % 10, 6, 3);
         }
+        break;
 
-        _u8Day = stDate.u8Day;
+      case eMENU_ITEM_MONTH:
+        {
+          //increment day
+          _stDate.u8Month++;
+    
+          if (_stDate.u8Month == 13)
+          {
+            _stDate.u8Month = 1;
+          }
+    
+          vAddNumToPattern(_stDate.u8Month / 10, 2, 3);
+          vAddNumToPattern(_stDate.u8Month % 10, 6, 3);
+        }
+        break;
 
-        //go back to configuring the day
-        _eCurMenuItem = eMENU_ITEM_DAY;
+      case eMENU_ITEM_YEAR:
+        {
+          //increment year
+          _stDate.u8Year++;
+    
+          if (_stDate.u8Year == 50)
+          {
+            _stDate.u8Year = 10;
+          }
+    
+          vAddNumToPattern(_stDate.u8Year / 10, 2, 3);
+          vAddNumToPattern(_stDate.u8Year % 10, 6, 3);
+        }
+        break;
 
-        vClearPattern();
-        vSetInPattern(0, 1, 1);
-        vSetInPattern(1, 1, 1);
-        vAddNumToPattern(_u8Day / 10, 2, 3);
-        vAddNumToPattern(_u8Day % 10, 6, 3);
-      }
-      else
-      {
-        //go back to main menu
-        _eCurMenuItem = eMENU_ITEM_DATE;
-        vClearPattern();
+      case eMENU_ITEM_HOUR:
+        {
+          //increment hour
+          _u8Hour++;
+    
+          if (_u8Hour == 24)
+          {
+            _u8Hour = 0;
+          }
+    
+          vAddNumToPattern(_u8Hour / 10, 2, 3);
+          vAddNumToPattern(_u8Hour % 10, 6, 3);
+        }
+        break;
 
-        vSetInPattern(0, 1, 1);
-        
-        eRc = eMENU_DATE_AVAIL;
-      }
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_INVALIDATE_TIME)
-    {
-      //invalidate current time and stay on current item
-      eRc = eMENU_TIME_INVALID;
-    }
-    else if (_eCurMenuItem == eMENU_ITEM_TEST_DISPLAY)
-    {
-      //perform the display test and stay on current item
-      vTestDisplay();
+      case eMENU_ITEM_MINUTE:
+        {
+          //increment minute
+          _u8Minute++;
+    
+          if (_u8Minute == 60)
+          {
+            _u8Minute = 0;
+          }
+    
+          vAddNumToPattern(_u8Minute / 10, 2, 3);
+          vAddNumToPattern(_u8Minute % 10, 6, 3);
+        }
+        break;
+
+      case eMENU_ITEM_TEST_DISPLAY:
+        {
+          //perform the display test and stay on current item
+          vTestDisplay();
+        }
+        break;
+
+      default:
+        break;
     }
   }
 
-  return eRc;
+  if (_eCurMenuState != _astMenuActions[_eCurMenuState][eButton].eNextMenuState)
+  {
+    _eCurMenuState = _astMenuActions[_eCurMenuState][eButton].eNextMenuState;
+
+    switch (_eCurMenuState)
+    {
+      case eMENU_ITEM_NIRVANA:
+        {
+          vClearPattern();
+        }
+        break;
+
+      case eMENU_ITEM_TIME:
+        {
+          vClearPattern();
+          vSetInPattern(0, 0, 1);
+        }
+        break;
+
+      case eMENU_ITEM_HOUR:
+        {
+          vSetInPattern(1, 0, 1);
+          vAddNumToPattern(_u8Hour / 10, 2, 3);
+          vAddNumToPattern(_u8Hour % 10, 6, 3);
+        }
+        break;
+
+      case eMENU_ITEM_MINUTE:
+        {
+          vSetInPattern(2, 0, 1);
+          vAddNumToPattern(_u8Minute / 10, 2, 3);
+          vAddNumToPattern(_u8Minute % 10, 6, 3);
+        }
+        break;
+
+      case eMENU_ITEM_DATE:
+        {
+          //check if the configured date is valid
+          if (!u8IsValidDate(&_stDate))
+          {
+            //this month does not have the day selected (29, 30, 31)
+            _stDate.u8Day--;
+    
+            while (!u8IsValidDate(&_stDate))
+            {
+              _stDate.u8Day--;
+            }
+    
+            //overwrite current menu item and go back to configuring the day
+            _eCurMenuState = eMENU_ITEM_DAY;
+    
+            vSetInPattern(2, 1, 0);
+            vSetInPattern(3, 1, 0);
+            vAddNumToPattern(_stDate.u8Day / 10, 2, 3);
+            vAddNumToPattern(_stDate.u8Day % 10, 6, 3);
+          }
+          else
+          {
+            vClearPattern();
+            vSetInPattern(0, 1, 1);
+          }
+        }
+        break;
+
+      case eMENU_ITEM_DAY:
+        {
+          vSetInPattern(1, 1, 1);
+          vAddNumToPattern(_stDate.u8Day / 10, 2, 3);
+          vAddNumToPattern(_stDate.u8Day % 10, 6, 3);
+        }
+        break;
+
+      case eMENU_ITEM_MONTH:
+        {
+          vSetInPattern(2, 1, 1);
+          vAddNumToPattern(_stDate.u8Month / 10, 2, 3);
+          vAddNumToPattern(_stDate.u8Month % 10, 6, 3);
+        }
+        break;
+
+      case eMENU_ITEM_YEAR:
+        {
+          vSetInPattern(3, 1, 1);
+          vAddNumToPattern(_stDate.u8Year / 10, 2, 3);
+          vAddNumToPattern(_stDate.u8Year % 10, 6, 3);
+        }
+        break;
+
+      case eMENU_ITEM_INVALIDATE_TIME:
+        {
+          vClearPattern();
+          vSetInPattern(0, 9, 1);
+        }
+        break;
+
+      case eMENU_ITEM_TEST_DISPLAY:
+        {
+          vClearPattern();
+          vSetInPattern(0, 10, 1);
+        }
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  return _astMenuActions[eMenuStateBefore][eButton].eRc;
 }
 
 U24 u24MenuGetTime(void)
@@ -289,7 +311,7 @@ void vMenuGetDate(TS_DATE *pstDate)
     return;
   }
 
-  pstDate->u8Day   = _u8Day;
-  pstDate->u8Month = _u8Month;
-  pstDate->u8Year  = _u8Year;
+  pstDate->u8Day   = _stDate.u8Day;
+  pstDate->u8Month = _stDate.u8Month;
+  pstDate->u8Year  = _stDate.u8Year;
 }
