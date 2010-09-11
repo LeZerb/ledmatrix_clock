@@ -3,16 +3,6 @@
 #include "display.h"
 #include "date.h"
 
-#ifndef DEBUG
-  #define DEBUG 0
-#elif (DEBUG == DEBUG_DCF)
-  #undef  DEBUG
-  #define DEBUG 1
-#else
-  #undef  DEBUG
-  #define DEBUG 0
-#endif
-
 void _vCalcTime(U8 *pu8DCFData, U24 *pu24Time)
 {
   U8 u8Minute = 0, u8Hour = 0;
@@ -120,10 +110,6 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, U24 *pu24Time, TS_DATE *pstDate)
       //a sync event has occurred
       _bSyncDone = 1;
 
-      #if DEBUG
-        COL0 = !COL0;
-      #endif
-
       if (_u8DCFBitsRecvd == 59)
       {
         //we can now set the time now
@@ -145,10 +131,6 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, U24 *pu24Time, TS_DATE *pstDate)
             (_stFirstDate.u8Month == stDateNow.u8Month) &&
             (_stFirstDate.u8Year  == stDateNow.u8Year))
         {
-          #if DEBUG
-            COL4 = !COL4;
-          #endif
-
           *pu24Time = u24TimeNow;
           *pstDate  = stDateNow;
           eRc = eDCF_TIME_SET;
@@ -176,10 +158,6 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, U24 *pu24Time, TS_DATE *pstDate)
       _u8DCFBitsRecvd = 0;
       _bSyncDone      = 0;
       eRc = eDCF_ERROR;
-
-      #if DEBUG
-        COL10 = !COL10;
-      #endif
     }
   }
   else
@@ -194,10 +172,6 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, U24 *pu24Time, TS_DATE *pstDate)
       //or we already have all data bytes but another one is upcoming
       _u8DCFBitsRecvd = 0;
       _bSyncDone      = 0;
-
-      #if DEBUG
-        COL9 = !COL9;
-      #endif
     }
     else if (_u8DCFBitsRecvd == 59)
     {
@@ -219,10 +193,6 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, U24 *pu24Time, TS_DATE *pstDate)
       //this is most likely a 0
       //we do not need to save this value since it is already set
       _u8DCFBitsRecvd++;
-      
-      #if DEBUG
-        COL1 = !COL1;
-      #endif
 
       if (_u8CurrentBit)
       {
@@ -240,12 +210,8 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, U24 *pu24Time, TS_DATE *pstDate)
     {
       //this is most likely a 1
       _u8DCFBitsRecvd++;
-      
-      #if DEBUG
-        COL2 = !COL2;
-      #endif
 
-      BIT_SET(_au8DCFData[_u8CurrentByte], _u8CurrentBit);
+      BIT_SET_8(_au8DCFData[_u8CurrentByte], _u8CurrentBit);
 
       if (_u8CurrentBit)
       {
@@ -263,10 +229,6 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, U24 *pu24Time, TS_DATE *pstDate)
       _u8DCFBitsRecvd = 0;
       _bSyncDone      = 0;
       eRc = eDCF_ERROR;
-      
-      #if DEBUG
-        COL8 = !COL8;
-      #endif
     }
   }
 
