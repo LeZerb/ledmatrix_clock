@@ -10,6 +10,7 @@ typedef enum
 {
   eDISP_TIME,
   eDISP_MENU,
+  eDISP_TIME_DIG,
   eDISP_SECOND,
   eDISP_DAY,
   eDISP_YEAR
@@ -56,17 +57,17 @@ void main(void)
 
   while (1)
   {
-    static bit              _bValidTime    = 0,                      //is the time taht is currently running valid
-                            _bTimeWasValid = 0,                      //time is invalidated at 4 o'clock - did we have a valid time
-                            _bLastDCF      = 0;                      //last value which was input on DCF pin
-    static TE_DISPLAY_STATE _eDisplayState = eDISP_TIME;             //what is to be displayed on the display
-    static U24              _u24SecsToday  = 0;                      //hold the second of the day
-    static TS_DATE          _stDate        = {1, 1, 10};             //hold the current date
-    static U8               _u8DCFSecs     = 0;                      //how many second wraps since last DCF in state change
-    static TE_MENU_CONFIG   _eConfig       = eMENU_CONF_DREIVIERTEL; //hold the config of how the time is to be displayed
-    U8                      u8CurClockInt  = _u8ClkInt,              //what is the current clock interrupt count
-                            u8DisplayUpd   = 0;                      //do we need to update the display content
-    TE_MENU_RC              eMenuRc        = eMENU_RC_OK;            //what does the menu system tell us
+    static bit              _bValidTime     = 0,                      //is the time taht is currently running valid
+                            _bNightlyUpdate = 0,                      //time is invalidated at 4 o'clock - did we have a valid time
+                            _bLastDCF       = 0;                      //last value which was input on DCF pin
+    static TE_DISPLAY_STATE _eDisplayState  = eDISP_TIME;             //what is to be displayed on the display
+    static TS_TIME          _stTime         = {0, 0, 0};                      //hold the time of the day
+    static TS_DATE          _stDate         = {1, 1, 10};             //hold the current date
+    static U8               _u8DCFSecs      = 0;                      //how many second wraps since last DCF in state change
+    static TE_MENU_CONFIG   _eConfig        = eMENU_CONF_DREIVIERTEL; //hold the config of how the time is to be displayed
+    U8                      u8CurClockInt   = _u8ClkInt,              //what is the current clock interrupt count
+                            u8DisplayUpd    = 0;                      //do we need to update the display content
+    TE_MENU_RC              eMenuRc         = eMENU_RC_OK;            //what does the menu system tell us
 
     //clear the watchdog timer
     CLRWDT();
@@ -77,7 +78,7 @@ void main(void)
       _u8ClkInt -= WRAPS_A_SEC;
 
       //increment DCF seconds timer for calculation of delay between edges
-      if (!(_u8DCFSecs & 4))
+      if (_u8DCFSecs < 4)
       {
         //we do not need to increment any further since the delay is already too high
         //and we do not want to wrap since this might cause issues later
@@ -85,46 +86,62 @@ void main(void)
       }
 
       //increment time of day
-      _u24SecsToday++;
+      _stTime.u8Second++;
 
-      if (_u24SecsToday >= SECS_A_DAY)
+      if (_stTime.u8Second == 60)
       {
-        //a new day has come
-        _u24SecsToday = 0;
+        //this is a new minute
+        _stTime.u8Second = 0;
+        _stTime.u8Minute++;
 
-        _stDate.u8Day++;
-
-        if (!u8IsValidDate(&_stDate))
+        if (_stTime.u8Minute == 60)
         {
-          //this is a new month
-          _stDate.u8Day = 1;
-          _stDate.u8Month++;
+          //this is a new hour
+          _stTime.u8Minute = 0;
+          _stTime.u8Hour++;
 
-          if (_stDate.u8Month > 12)
+          if (_stTime.u8Hour == 24)
           {
-            //this is a new year
-            _stDate.u8Month = 1;
-            _stDate.u8Year++;
+            //a new day has come
+            _stTime.u8Hour = 0;
+
+            _stDate.u8Day++;
+
+            if (!u8IsValidDate(&_stDate))
+            {
+              //this is most likely a new month
+              _stDate.u8Day = 1;
+              _stDate.u8Month++;
+
+              if (_stDate.u8Month > 12)
+              {
+                //this is a new year
+                _stDate.u8Month = 1;
+                _stDate.u8Year++;
+              }
+            }
           }
         }
       }
     }
 
-    //get the time every night at 4 o'clock
+    //get the time every night at 4 o'clock even though we have a valid time
     if (_bValidTime &&
-        (_u24SecsToday == (SECS_IN_HOUR * 4)))
+        _stTime.u8Hour    == 4 &&
+        _stTime.u8Minute  == 0 &&
+        _stTime.u8Second == 0)
     {
       //we need to invalidate the time here
       //since showing the current time does not allow correct DCF receiving
       //interruptions would disturb the DCF input signals
-      _bTimeWasValid = 1;
-      _bValidTime    = 0;
+      _bNightlyUpdate = 1;
+      _bValidTime     = 0;
     }
 
     //automatically set the clock if we do not have a valid time
     if (!_bValidTime)
     {
-      DCF_POWER   = 1;
+      DCF_POWER = 1;
     }
 
     //has there been a change on the DCF input
@@ -148,14 +165,14 @@ void main(void)
       }
       else
       {
-        u24TimeSince = (((u8CurClockInt - _u8LastClkInt) * 250) / WRAPS_A_SEC) * 4;
+        u24TimeSince = (((u8CurClockInt - _u8LastClkInt) * (U24) 250) / WRAPS_A_SEC) * 4;
       }
 
       _u8DCFSecs    = 0;
       _u8LastClkInt = u8CurClockInt;
 
-      //add a bit to the DCF calculation and 
-      eDCFRc = eDCFAddBit(_bLastDCF, (U16) u24TimeSince, &_u24SecsToday, &_stDate);
+      //add a bit to the DCF calculation and u24TimeSince should fit in 16bit after the calculation is done
+      eDCFRc = eDCFAddBit(_bLastDCF, (U16) u24TimeSince, &_stTime, &_stDate);
 
       if (eDCFRc == eDCF_TIME_SET)
       {
@@ -164,12 +181,13 @@ void main(void)
         //disable the DCF receiver
         DCF_POWER   = 0;
       }
-      else if (_bTimeWasValid &&
-               _u24SecsToday > SECS_IN_HOUR * 5)
+      else if (_bNightlyUpdate &&
+               _stTime.u8Hour >= 5)
       {
         //we have tried to update the time for an hour now -> give up
-        _bValidTime = 1;
-        DCF_POWER   = 0;
+        _bNightlyUpdate = 0;
+        _bValidTime     = 1;
+        DCF_POWER       = 0;
       }
     }
 
@@ -181,7 +199,7 @@ void main(void)
       //only handle button release
       if (_bLastSWMenu)
       {
-        eMenuRc = eHandleButton(eBUTTON_MENU, _u24SecsToday, &_stDate, _eConfig);
+        eMenuRc = eHandleButton(eBUTTON_MENU, &_stTime, &_stDate, _eConfig);
       }
     }
     
@@ -193,7 +211,7 @@ void main(void)
       //only handle button release
       if (_bLastSWSet)
       {
-        eMenuRc = eHandleButton(eBUTTON_SET, _u24SecsToday, &_stDate, _eConfig);
+        eMenuRc = eHandleButton(eBUTTON_SET, &_stTime, &_stDate, _eConfig);
       }
     }
 
@@ -203,8 +221,8 @@ void main(void)
     }
     else if (eMenuRc == eMENU_RC_TIME_AVAIL)
     {
-      _u24SecsToday = u24MenuGetTime();
-      _bValidTime   = 1;
+      vMenuGetTime(&_stTime);
+      _bValidTime = 1;
     }
     else if (eMenuRc == eMENU_RC_DATE_AVAIL)
     {
@@ -212,11 +230,19 @@ void main(void)
     }
     else if (eMenuRc == eMENU_RC_TIME_INVALID)
     {
-      _bValidTime     = 0;
-      _u24SecsToday   = 0;
-      _stDate.u8Day   = 1;
-      _stDate.u8Month = 1;
-      _stDate.u8Year  = 10;
+      _bValidTime      = 0;
+      _stTime.u8Hour   = 0;
+      _stTime.u8Minute = 0;
+      _stTime.u8Second = 0;
+      _stDate.u8Day    = 1;
+      _stDate.u8Month  = 1;
+      _stDate.u8Year   = 10;
+    }
+    else if (eMenuRc == eMENU_RC_SHOW_DIGTIME)
+    {
+      _eDisplayState = eDISP_TIME_DIG;
+      vClearPattern();
+      u8DisplayUpd   = 1;
     }
     else if (eMenuRc == eMENU_RC_SHOW_SECOND)
     {
@@ -252,18 +278,47 @@ void main(void)
       //write the preconfigured menu
       vWritePattern();
     }
+    else if (_eDisplayState == eDISP_TIME_DIG)
+    {
+      //show current second
+      static U8 _u8LastHour,
+                _u8LastMinute;
+
+      if (u8DisplayUpd ||
+          _u8LastHour   != _stTime.u8Hour ||
+          _u8LastMinute != _stTime.u8Minute)
+      {
+        _u8LastHour   = _stTime.u8Hour;
+        _u8LastMinute = _stTime.u8Minute;
+
+        vAddNumToPattern(_u8LastHour / 10, 2, 0);
+        vAddNumToPattern(_u8LastHour % 10, 6, 0);
+        vAddNumToPattern(_u8LastMinute / 10, 2, 6);
+        vAddNumToPattern(_u8LastMinute % 10, 6, 6);
+      }
+
+      vSetInPattern(10, 4, _stTime.u8Second & 1);
+      vSetInPattern(10, 6, _stTime.u8Second & 1);
+
+      vWritePattern();
+    }
     else if (_eDisplayState == eDISP_SECOND)
     {
       //show current second
-      static U24 _u24LastSec;
+      static U8 _u8LastSec = 0xFF;
 
       if (u8DisplayUpd ||
-          _u24LastSec != _u24SecsToday)
+          _u8LastSec != _stTime.u8Second)
       {
-        vAddNumToPattern((_u24SecsToday % 60) / 10, 2, 3);
-        vAddNumToPattern((_u24SecsToday % 60) % 10, 6, 3);
+        if (u8DisplayUpd ||
+            (_u8LastSec / 10) != (_stTime.u8Second / 10)) 
+        {
+          vAddNumToPattern(_stTime.u8Second / 10, 2, 3);
+        }
 
-        _u24LastSec = _u24SecsToday;
+        _u8LastSec = _stTime.u8Second;
+
+        vAddNumToPattern(_u8LastSec % 10, 6, 3);
       }
 
       vWritePattern();
@@ -271,18 +326,20 @@ void main(void)
     else if (_eDisplayState == eDISP_DAY)
     {
       //show day and month
-      static TS_DATE _stLastDate;
+      static U8 _u8LastDay,
+                _u8LastMonth;
 
       if (u8DisplayUpd ||
-          _stLastDate.u8Day   != _stDate.u8Day ||
-          _stLastDate.u8Month != _stDate.u8Month)
+          _u8LastDay   != _stDate.u8Day ||
+          _u8LastMonth != _stDate.u8Month)
       {
-        vAddNumToPattern(_stDate.u8Day   / 10, 2, 0);
-        vAddNumToPattern(_stDate.u8Day   % 10, 6, 0);
-        vAddNumToPattern(_stDate.u8Month / 10, 2, 6);
-        vAddNumToPattern(_stDate.u8Month % 10, 6, 6);
+        _u8LastDay   = _stDate.u8Day;
+        _u8LastMonth = _stDate.u8Month;
 
-        _stLastDate = _stDate;
+        vAddNumToPattern(_u8LastDay   / 10, 2, 0);
+        vAddNumToPattern(_u8LastDay   % 10, 6, 0);
+        vAddNumToPattern(_u8LastMonth / 10, 2, 6);
+        vAddNumToPattern(_u8LastMonth % 10, 6, 6);
       }
 
       vWritePattern();
@@ -290,17 +347,17 @@ void main(void)
     else if (_eDisplayState == eDISP_YEAR)
     {
       //show current year 20xx
-      static TS_DATE _stLastDate;
+      static U8 _u8LastYear;
 
       if (u8DisplayUpd ||
-          _stLastDate.u8Year != _stDate.u8Year)
+          _u8LastYear != _stDate.u8Year)
       {
-        vAddNumToPattern(2                  , 2, 0);
-        vAddNumToPattern(0                  , 6, 0);
-        vAddNumToPattern(_stDate.u8Year / 10, 2, 6);
-        vAddNumToPattern(_stDate.u8Year % 10, 6, 6);
+        _u8LastYear = _stDate.u8Year;
 
-        _stLastDate = _stDate;
+        vAddNumToPattern(2               , 2, 0);
+        vAddNumToPattern(0               , 6, 0);
+        vAddNumToPattern(_u8LastYear / 10, 2, 6);
+        vAddNumToPattern(_u8LastYear % 10, 6, 6);
       }
 
       vWritePattern();
@@ -308,7 +365,7 @@ void main(void)
     else if (_bValidTime &&
              _eDisplayState == eDISP_TIME)
     {
-      vWriteTime(_u24SecsToday, _eConfig);
+      vWriteTime(&_stTime, _eConfig);
     }
     else
     {

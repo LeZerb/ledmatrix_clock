@@ -21,6 +21,7 @@ typedef enum
   eMENU_ITEM_SHOW_YEAR,
   eMENU_ITEM_CONFIG,
   eMENU_ITEM_CONFIG_CHANGE,
+  eMENU_ITEM_SHOW_TIME,
   eMENU_ITEM_COUNT
 }TE_MENU_STATE;
 
@@ -45,7 +46,7 @@ static const TS_MENU_ACTIONS _astMenuActions[eMENU_ITEM_COUNT][eBUTTON_COUNT] =
 {
   //eMENU_ITEM_NIRVANA
   {{eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_CONFIG         , eMENU_RC_ENTERED}   ,
-   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_SHOW_SECOND    , eMENU_RC_SHOW_SECOND}},
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_SHOW_TIME      , eMENU_RC_SHOW_DIGTIME}},
   //eMENU_ITEM_TIME
   {{eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_DATE           , eMENU_RC_OK}        ,
    {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_HOUR           , eMENU_RC_OK}},
@@ -87,12 +88,14 @@ static const TS_MENU_ACTIONS _astMenuActions[eMENU_ITEM_COUNT][eBUTTON_COUNT] =
    {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_CONFIG_CHANGE  , eMENU_RC_OK}},
   //eMENU_ITEM_CONFIG_CHANGE
   {{eMENU_ACTION_DO_STUFF    , eMENU_ITEM_CONFIG_CHANGE  , eMENU_RC_OK}        ,
-   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_CONFIG         , eMENU_RC_CONFIG_CHANGED}}
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_CONFIG         , eMENU_RC_CONFIG_CHANGED}},
+  //eMENU_ITEM_SHOW_TIME
+  {{eMENU_ACTION_NO_ACTION   , eMENU_ITEM_SHOW_TIME      , eMENU_RC_OK}        ,
+   {eMENU_ACTION_CHANGE_STATE, eMENU_ITEM_SHOW_SECOND    , eMENU_RC_SHOW_SECOND}}
 };
 
 static TE_MENU_STATE  _eCurMenuState = eMENU_ITEM_NIRVANA;
-static U8             _u8Hour        = 0,
-                      _u8Minute      = 0;
+static TS_TIME        _stTime        = {0, 0, 0};
 static TS_DATE        _stDate        = {1, 1, 10};
 static TE_MENU_CONFIG _eConfig       = eMENU_CONF_DREIVIERTEL;
 
@@ -123,7 +126,7 @@ void vAddConfigText(TE_MENU_CONFIG eConfig)
   }
 }
 
-TE_MENU_RC eHandleButton(TE_BUTTONS eButton, U24 u24CurTime, TS_DATE *pstCurDate, TE_MENU_CONFIG eConfig)
+TE_MENU_RC eHandleButton(TE_BUTTONS eButton, TS_TIME *pstTime, TS_DATE *pstCurDate, TE_MENU_CONFIG eConfig)
 {
   TE_MENU_STATE eMenuStateBefore = _eCurMenuState;
 
@@ -196,30 +199,30 @@ TE_MENU_RC eHandleButton(TE_BUTTONS eButton, U24 u24CurTime, TS_DATE *pstCurDate
       case eMENU_ITEM_HOUR:
         {
           //increment hour
-          _u8Hour++;
+          _stTime.u8Hour++;
     
-          if (_u8Hour == 24)
+          if (_stTime.u8Hour == 24)
           {
-            _u8Hour = 0;
+            _stTime.u8Hour = 0;
           }
     
-          vAddNumToPattern(_u8Hour / 10, 2, 3);
-          vAddNumToPattern(_u8Hour % 10, 6, 3);
+          vAddNumToPattern(_stTime.u8Hour / 10, 2, 3);
+          vAddNumToPattern(_stTime.u8Hour % 10, 6, 3);
         }
         break;
 
       case eMENU_ITEM_MINUTE:
         {
           //increment minute
-          _u8Minute++;
+          _stTime.u8Minute++;
     
-          if (_u8Minute == 60)
+          if (_stTime.u8Minute == 60)
           {
-            _u8Minute = 0;
+            _stTime.u8Minute = 0;
           }
     
-          vAddNumToPattern(_u8Minute / 10, 2, 3);
-          vAddNumToPattern(_u8Minute % 10, 6, 3);
+          vAddNumToPattern(_stTime.u8Minute / 10, 2, 3);
+          vAddNumToPattern(_stTime.u8Minute % 10, 6, 3);
         }
         break;
 
@@ -274,20 +277,19 @@ TE_MENU_RC eHandleButton(TE_BUTTONS eButton, U24 u24CurTime, TS_DATE *pstCurDate
       case eMENU_ITEM_HOUR:
         {
           //begin from the time currently set
-          _u8Hour   = u24CurTime / SECS_IN_HOUR;
-          _u8Minute = (u24CurTime % SECS_IN_HOUR) / SECS_IN_MIN;
+          _stTime = *pstTime;
 
           vSetInPattern(1, 1, 1);
-          vAddNumToPattern(_u8Hour / 10, 2, 3);
-          vAddNumToPattern(_u8Hour % 10, 6, 3);
+          vAddNumToPattern(_stTime.u8Hour / 10, 2, 3);
+          vAddNumToPattern(_stTime.u8Hour % 10, 6, 3);
         }
         break;
 
       case eMENU_ITEM_MINUTE:
         {
           vSetInPattern(2, 1, 1);
-          vAddNumToPattern(_u8Minute / 10, 2, 3);
-          vAddNumToPattern(_u8Minute % 10, 6, 3);
+          vAddNumToPattern(_stTime.u8Minute / 10, 2, 3);
+          vAddNumToPattern(_stTime.u8Minute % 10, 6, 3);
         }
         break;
 
@@ -369,16 +371,14 @@ TE_MENU_RC eHandleButton(TE_BUTTONS eButton, U24 u24CurTime, TS_DATE *pstCurDate
   return _astMenuActions[eMenuStateBefore][eButton].eRc;
 }
 
-U24 u24MenuGetTime(void)
+void vMenuGetTime(TS_TIME *pstTime)
 {
-  return (_u8Hour * (U24) SECS_IN_HOUR + _u8Minute * SECS_IN_MIN);
+  *pstTime = _stTime;
 }
 
 void vMenuGetDate(TS_DATE *pstDate)
 {
-  pstDate->u8Day   = _stDate.u8Day;
-  pstDate->u8Month = _stDate.u8Month;
-  pstDate->u8Year  = _stDate.u8Year;
+  *pstDate = _stDate;
 }
 
 TE_MENU_CONFIG eMenuGetConfig(void)

@@ -41,7 +41,7 @@ typedef enum
 }TE_CLOCK_TEXT;
 
 //declarations
-void vWriteTime(U24 u24TimeInSecs, TE_MENU_CONFIG eConfig);
+void vWriteTime(TS_TIME *pstTime, TE_MENU_CONFIG eConfig);
 void vTestDisplay(void);
 void vClearPattern(void);
 void vSetInPattern(U8 u8Col, U8 u8Row, U8 u8On);

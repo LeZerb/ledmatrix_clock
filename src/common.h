@@ -13,8 +13,6 @@
 
 #define SECS_IN_MIN                        (60)
 #define SECS_IN_5_MIN         (5 * SECS_IN_MIN)
-#define SECS_IN_HOUR         (60 * SECS_IN_MIN)
-#define SECS_A_DAY    ((U24) 24 * SECS_IN_HOUR)
 
 #define DELAY_MS(x) CLRWDT(); __delay_ms((x));
 #define DELAY_US(x) CLRWDT(); __delay_us((x));

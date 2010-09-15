@@ -324,25 +324,24 @@ static void _vOnOffRow(unsigned char ucRow, unsigned char ucOn)
   }
 }
 
-void vWriteTime(U24 u24TimeInSecs, TE_MENU_CONFIG eConfig)
+void vWriteTime(TS_TIME *pstTime, TE_MENU_CONFIG eConfig)
 {
   #define MAX_ITEMS 6
-  U8 ucRow,
-     ucHour,
+  U8 ucHour,
      ucMinute,
      aucTime[MAX_ITEMS],
      ucCurrentItem;
 
   memset(aucTime, 0xFF, MAX_ITEMS);
 
-  ucHour = u24TimeInSecs / SECS_IN_HOUR;
+  ucHour = pstTime->u8Hour;
 
   if (ucHour > 23)
   {
     return;
   }
 
-  ucMinute = (u24TimeInSecs % SECS_IN_HOUR) / SECS_IN_MIN;
+  ucMinute = pstTime->u8Minute;
 
   if (ucMinute > 59)
   {
@@ -499,7 +498,7 @@ void vWriteTime(U24 u24TimeInSecs, TE_MENU_CONFIG eConfig)
   {
     if (aucTime[ucCurrentItem] != 0xFF)
     {
-      unsigned char ucCol;
+      U8 ucCol, ucRow;
 
       ucRow = _astPos[aucTime[ucCurrentItem]].u8Row;
 
@@ -511,7 +510,7 @@ void vWriteTime(U24 u24TimeInSecs, TE_MENU_CONFIG eConfig)
       }
 
       _vOnOffRow(ucRow, 1);
-      DELAY_US(1500);
+      DELAY_US(1200);
       _vOnOffRow(ucRow, 0);
     }
   }
@@ -537,7 +536,7 @@ void vWriteTime(U24 u24TimeInSecs, TE_MENU_CONFIG eConfig)
       _vOnOffCol(0, 1);
 
       _vOnOffRow(NUM_ROWS - 1, 1);
-      DELAY_US(1500);
+      DELAY_US(1200);
       _vOnOffRow(NUM_ROWS - 1, 0);
 
       break;
@@ -631,7 +630,7 @@ void vWritePattern()
     }
 
     _vOnOffRow(u8Row, 1);
-    DELAY_MS(1);
+    DELAY_US(800);
     _vOnOffRow(0xFF, 0);
   }
 }

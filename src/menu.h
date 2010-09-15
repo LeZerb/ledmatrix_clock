@@ -20,6 +20,7 @@ typedef enum
   eMENU_RC_TIME_AVAIL,
   eMENU_RC_DATE_AVAIL,
   eMENU_RC_TIME_INVALID,
+  eMENU_RC_SHOW_DIGTIME,
   eMENU_RC_SHOW_SECOND,
   eMENU_RC_SHOW_DAY,
   eMENU_RC_SHOW_YEAR,
@@ -39,8 +40,8 @@ typedef enum
 }TE_MENU_CONFIG;
 
 //functions
-TE_MENU_RC eHandleButton(TE_BUTTONS eButton, U24 u24CurTime, TS_DATE *pstCurDate, TE_MENU_CONFIG eConfig);
-U24 u24MenuGetTime(void);
+TE_MENU_RC eHandleButton(TE_BUTTONS eButton, TS_TIME *pstTime, TS_DATE *pstCurDate, TE_MENU_CONFIG eConfig);
+void vMenuGetTime(TS_TIME *pstTime);
 void vMenuGetDate(TS_DATE *pstDate);
 TE_MENU_CONFIG eMenuGetConfig(void);
 
