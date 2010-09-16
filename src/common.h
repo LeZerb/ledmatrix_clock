@@ -17,7 +17,6 @@
 #define DELAY_MS(x) CLRWDT(); __delay_ms((x));
 #define DELAY_US(x) CLRWDT(); __delay_us((x));
 
-
 #define BIT_SET_8(var, bitno) ((var) |=   (U8)1 << (bitno))
 #define BIT_CLR_8(var, bitno) ((var) &= ~((U8)1 << (bitno)))
 
