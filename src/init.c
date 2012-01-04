@@ -13,13 +13,13 @@
 ** watchdog timer disabled - will be enabled in software
 ** use internal clock - CLKIN/CLKOUT are I/O
 */
-__CONFIG(DEBUGDIS & LVPDIS & FCMEN & IESODIS & BOREN & DUNPROTECT & UNPROTECT & MCLRDIS & PWRTEN & WDTDIS & HS);
+__CONFIG(DEBUG_OFF & LVP_OFF & FCMEN_ON & IESO_OFF & BOREN_ON & CPD_OFF & CP_OFF & MCLRE_OFF & PWRTE_ON & WDTE_OFF & FOSC_HS);
 
 /*
 ** flash write protection is not enabled
 ** brown-out reset on 2.1V
 */
-__CONFIG(BORV21);
+__CONFIG(BOR4V_BOR21V);
 
 void vInit()
 {
@@ -31,7 +31,7 @@ void vInit()
   SWDTEN = 1;
 
   //disable port B pull-ups
-  RBPU = 1;
+  nRBPU = 1;
 
   //timer 0 clock source is internal clock Fosc/4
   T0CS = 0;

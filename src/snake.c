@@ -167,7 +167,7 @@ void snake_run(void)
   }
 }
 
-void main(void)
+void mmain(void)
 {
   snake_run();
 }
