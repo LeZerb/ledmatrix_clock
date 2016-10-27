@@ -19,8 +19,8 @@ typedef enum
 //variables
 static volatile U8  _u8ClkInt = 0;
 static volatile bit _bDCF     = 0,
-					_bSWMenu  = 0,
-					_bSWSet   = 0;
+                    _bSWMenu  = 0,
+                    _bSWSet   = 0;
 
 static void interrupt _vInterrupt(void)
 {
@@ -148,7 +148,7 @@ void main(void)
     if (_bLastDCF != _bDCF)
     {
       static U8 _u8LastClkInt = 0;
-      U24       u24TimeSince;
+      U32       u32TimeSince;
 
       TE_DCF_RC eDCFRc = eDCF_OK;
 
@@ -159,20 +159,20 @@ void main(void)
         //time is the rest of the last clock interrupt to the following wrap plus
         //(wraps - 1) * 1000ms plus
         //what has elapsed of the current second
-        u24TimeSince  = ((WRAPS_A_SEC - _u8LastClkInt) * (U24) 1000) / WRAPS_A_SEC;
-        u24TimeSince += (_u8DCFSecs - 1) * (U24) 1000;
-        u24TimeSince += (u8CurClockInt * (U24) 1000) / WRAPS_A_SEC;
+        u32TimeSince  = ((WRAPS_A_SEC - _u8LastClkInt) * (U32) 1000) / WRAPS_A_SEC;
+        u32TimeSince += (_u8DCFSecs - 1) * (U32) 1000;
+        u32TimeSince += (u8CurClockInt * (U32) 1000) / WRAPS_A_SEC;
       }
       else
       {
-        u24TimeSince = (((u8CurClockInt - _u8LastClkInt) * (U24) 250) / WRAPS_A_SEC) * 4;
+        u32TimeSince = (((u8CurClockInt - _u8LastClkInt) * (U32) 250) / WRAPS_A_SEC) * 4;
       }
 
       _u8DCFSecs    = 0;
       _u8LastClkInt = u8CurClockInt;
 
-      //add a bit to the DCF calculation and u24TimeSince should fit in 16bit after the calculation is done
-      eDCFRc = eDCFAddBit(_bLastDCF, (U16) u24TimeSince, &_stTime, &_stDate);
+      //add a bit to the DCF calculation and u32TimeSince should fit in 16bit after the calculation is done
+      eDCFRc = eDCFAddBit(_bLastDCF, (U16) u32TimeSince, &_stTime, &_stDate);
 
       if (eDCFRc == eDCF_TIME_SET)
       {

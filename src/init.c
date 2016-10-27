@@ -28,10 +28,11 @@ void vInit()
   WDTPS2 = 0;
   WDTPS1 = 1;
   WDTPS0 = 1;
-  SWDTEN = 1;
+  SWDTEN = 0;
 
   //disable port B pull-ups
   nRBPU = 1;
+  WPUB = 0;
 
   //timer 0 clock source is internal clock Fosc/4
   T0CS = 0;

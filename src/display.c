@@ -1,5 +1,4 @@
 #include <string.h>
-#include <htc.h>
 #include "common.h"
 #include "display.h"
 

@@ -2,14 +2,14 @@
 #define _COMMON_H_
 
 //common includes
-#include <htc.h>
+#include <xc.h>
 #include <string.h>
+#include <stdint.h>
 #include "hardware.h"
 
-#define U8  unsigned char
-#define U16 unsigned short int
-#define U24 unsigned short long int
-#define U32 unsigned long int
+#define U8  uint8_t
+#define U16 uint16_t
+#define U32 uint32_t
 
 #define SECS_IN_MIN                        (60)
 #define SECS_IN_5_MIN         (5 * SECS_IN_MIN)
