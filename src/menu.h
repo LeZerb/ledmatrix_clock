@@ -42,7 +42,8 @@ typedef enum {
 
 //return TRUE when we are in the menu
 void eHandleButton(TE_BUTTONS eButton);
-//return TRUE if we are in the menu
-inline TE_MENU_STATE eGetState();
+
+//return menu state
+inline TE_MENU_STATE menuGetState();
 
 #endif

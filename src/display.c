@@ -65,7 +65,7 @@ static const TS_POSITION _astPos[eTEXT_NUM_ENTRIES] = {
     //eNULL_UHR (only UHR)
     {
         {1},
-        {0b111000000000000}
+        {0b1110000000000000}
     },
     //eFUENF
     {
@@ -109,13 +109,13 @@ static const TS_POSITION _astPos[eTEXT_NUM_ENTRIES] = {
     },
     //eHALB
     {
-        {6},
+        {5},
         {0b0000011100000000}
     },
     //eMITTERNACHT
     {
-        {5},
-        {0b1111000000000000}
+        {6},
+        {0b1111111111100000}
     },
     //eZWOELF_H
     {
@@ -423,7 +423,7 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
 
     ucCurrentItem = 0;
 
-    config = getConfig();
+    config = configGet();
 
     if (!(config & eCONF_ES_IST)) {
         aucTime[ucCurrentItem++] = eTEXT_ES_IST;

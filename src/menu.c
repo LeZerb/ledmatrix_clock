@@ -118,28 +118,49 @@ static const TE_MENU_STATE _aeMenuStateChanges[eMENU_ENTRY_COUNT][eBUTTON_COUNT]
 };
 
 static TE_MENU_STATE _eCurMenuState = eMENU_NIRVANA;
-static TS_TIME _stTime = {0, 0, 0};
-static BOOL _bTimeChanged = FALSE;
-static TS_DATE _stDate = {1, 1, 16};
-static BOOL _bDateChanged = FALSE;
-static TE_CONFIG _eConfig = 0;
-static BOOL _bConfigChanged = FALSE;
+static TS_TIME _time = {0, 0, 0};
+static BOOL _timeChanged = FALSE;
+static TS_DATE _date = {1, 1, 16};
+static BOOL _dateChanged = FALSE;
+static TE_CONFIG _config = 0;
+static BOOL _configChanged = FALSE;
+static BOOL _timeInvalidate = FALSE;
 
 //implementation
 
 void leaveState(TE_MENU_STATE state) {
     switch (state) {
         case eMENU_NIRVANA:
-            _eConfig = getConfig();
-            _bConfigChanged = FALSE;
-            _stDate.u8Day = 1;
-            _stDate.u8Month = 1;
-            _stDate.u8Year = 16;
-            _bDateChanged = FALSE;
-            _stTime.u8Hour = 0;
-            _stTime.u8Minute = 0;
-            _stTime.u8Second = 0;
-            _bTimeChanged = FALSE;
+            _config = configGet();
+            dateGet(&_date);
+            timeGet(&_time);
+            _configChanged = FALSE;
+            _date.u8Day = 1;
+            _date.u8Month = 1;
+            _date.u8Year = 16;
+            _dateChanged = FALSE;
+            _time.u8Hour = 0;
+            _time.u8Minute = 0;
+            _time.u8Second = 0;
+            _timeChanged = FALSE;
+            break;
+        case eMENU_MAIN_CONFIG:
+            if (_configChanged) {
+                configSave(_config);
+            }
+            break;
+        case eMENU_MAIN_TIME:
+            if (_timeChanged) {
+                timeSet(&_time);
+            }
+            if (_dateChanged) {
+                dateSet(&_date);
+            }
+            break;
+        case eMENU_MAIN_INVALIDATE_TIME:
+            if (_timeInvalidate) {
+                timeInvalidate();
+            }
             break;
     }
 }
@@ -148,25 +169,25 @@ void enterState(TE_MENU_STATE state) {
     switch (state) {
         case eMENU_MAIN_CONFIG:
             vClearPattern();
-            vSetInPattern(0, 0, 1);
-            if (_eConfig & eCONF_ES_IST) {
+            vSetInPattern(0, 10, 1);
+            if (_config & eCONF_ES_IST) {
                 vAddTextToPattern(eTEXT_ES_IST);
             }
-            if (_eConfig & eCONF_MITTERNACHT) {
+            if (_config & eCONF_MITTERNACHT) {
                 vAddTextToPattern(eTEXT_MITTERNACHT);
             }
-            if (_eConfig & eCONF_NULL) {
+            if (_config & eCONF_NULL) {
                 vAddTextToPattern(eTEXT_NULL_H);
                 vAddTextToPattern(eTEXT_NULL_UHR);
             }
-            if (_eConfig & eCONF_VIERTEL_VOR_NACH) {
+            if (_config & eCONF_VIERTEL_VOR_NACH) {
                 vAddTextToPattern(eTEXT_VIERTEL);
                 vAddTextToPattern(eTEXT_VOR);
                 vAddTextToPattern(eTEXT_NACH);
             } else {
                 vAddTextToPattern(eTEXT_DREIVIERTEL);
             }
-            if (_eConfig & eCONF_ZWANZIG_VOR_NACH) {
+            if (_config & eCONF_ZWANZIG_VOR_NACH) {
                 vAddTextToPattern(eTEXT_ZWANZIG);
                 vAddTextToPattern(eTEXT_VOR);
                 vAddTextToPattern(eTEXT_NACH);
@@ -174,46 +195,54 @@ void enterState(TE_MENU_STATE state) {
             break;
         case eMENU_MAIN_INVALIDATE_TIME:
             vClearPattern();
-            vSetInPattern(0, 9, 1);
+            vSetInPattern(0, 8, 1);
             break;
         case eMENU_MAIN_TEST_DISPLAY:
             vClearPattern();
-            vSetInPattern(0, 10, 1);
+            vSetInPattern(0, 7, 1);
             break;
         case eMENU_MAIN_TIME:
             vClearPattern();
-            vSetInPattern(0, 1, 1);
+            vSetInPattern(0, 9, 1);
             //show time 00:00
-            vAddNumToPattern(_stTime.u8Hour / 10, 2, 0);
-            vAddNumToPattern(_stTime.u8Hour % 10, 6, 0);
-            vAddNumToPattern(_stTime.u8Minute / 10, 2, 6);
-            vAddNumToPattern(_stTime.u8Minute % 10, 6, 6);
+            vAddNumToPattern(_time.u8Hour / 10, 2, 0);
+            vAddNumToPattern(_time.u8Hour % 10, 6, 0);
+            vAddNumToPattern(_time.u8Minute / 10, 2, 6);
+            vAddNumToPattern(_time.u8Minute % 10, 6, 6);
             //add colon
             vSetInPattern(10, 4, 1);
             vSetInPattern(10, 6, 1);
             break;
         case eMENU_SET_CONFIG_ES_IST:
             vClearPattern();
-            if (_eConfig & eCONF_ES_IST) {
+            vSetInPattern(0, 10, 1);
+            vSetInPattern(2, 10, 1);
+            if (_config & eCONF_ES_IST) {
                 vAddTextToPattern(eTEXT_ES_IST);
             }
             break;
         case eMENU_SET_CONFIG_MITTERNACHT:
             vClearPattern();
-            if (_eConfig & eCONF_MITTERNACHT) {
+            vSetInPattern(0, 10, 1);
+            vSetInPattern(5, 10, 1);
+            if (_config & eCONF_MITTERNACHT) {
                 vAddTextToPattern(eTEXT_MITTERNACHT);
             }
             break;
         case eMENU_SET_CONFIG_NULL:
             vClearPattern();
-            if (_eConfig & eCONF_NULL) {
+            vSetInPattern(0, 10, 1);
+            vSetInPattern(6, 10, 1);
+            if (_config & eCONF_NULL) {
                 vAddTextToPattern(eTEXT_NULL_H);
                 vAddTextToPattern(eTEXT_NULL_UHR);
             }
             break;
         case eMENU_SET_CONFIG_VIERTEL_VOR_NACH:
             vClearPattern();
-            if (_eConfig & eCONF_VIERTEL_VOR_NACH) {
+            vSetInPattern(0, 10, 1);
+            vSetInPattern(3, 10, 1);
+            if (_config & eCONF_VIERTEL_VOR_NACH) {
                 vAddTextToPattern(eTEXT_VIERTEL);
                 vAddTextToPattern(eTEXT_VOR);
                 vAddTextToPattern(eTEXT_NACH);
@@ -223,7 +252,9 @@ void enterState(TE_MENU_STATE state) {
             break;
         case eMENU_SET_CONFIG_ZWANZIG_VOR_NACH:
             vClearPattern();
-            if (_eConfig & eCONF_ZWANZIG_VOR_NACH) {
+            vSetInPattern(0, 10, 1);
+            vSetInPattern(4, 10, 1);
+            if (_config & eCONF_ZWANZIG_VOR_NACH) {
                 vAddTextToPattern(eTEXT_ZWANZIG);
                 vAddTextToPattern(eTEXT_VOR);
                 vAddTextToPattern(eTEXT_NACH);
@@ -232,20 +263,20 @@ void enterState(TE_MENU_STATE state) {
         case eMENU_SET_DAY:
             vClearPattern();
             //show day and month
-            vAddNumToPattern(_stDate.u8Day / 10, 2, 0);
-            vAddNumToPattern(_stDate.u8Day % 10, 6, 0);
-            vAddNumToPattern(_stDate.u8Month / 10, 2, 6);
-            vAddNumToPattern(_stDate.u8Month % 10, 6, 6);
+            vAddNumToPattern(_date.u8Day / 10, 2, 0);
+            vAddNumToPattern(_date.u8Day % 10, 6, 0);
+            vAddNumToPattern(_date.u8Month / 10, 2, 6);
+            vAddNumToPattern(_date.u8Month % 10, 6, 6);
             //add dot in front of day
             vSetInPattern(0, 2, 1);
             break;
         case eMENU_SET_HOUR:
             vClearPattern();
             //show time
-            vAddNumToPattern(_stTime.u8Hour / 10, 2, 0);
-            vAddNumToPattern(_stTime.u8Hour % 10, 6, 0);
-            vAddNumToPattern(_stTime.u8Minute / 10, 2, 6);
-            vAddNumToPattern(_stTime.u8Minute % 10, 6, 6);
+            vAddNumToPattern(_time.u8Hour / 10, 2, 0);
+            vAddNumToPattern(_time.u8Hour % 10, 6, 0);
+            vAddNumToPattern(_time.u8Minute / 10, 2, 6);
+            vAddNumToPattern(_time.u8Minute % 10, 6, 6);
             //add colon
             vSetInPattern(10, 4, 1);
             vSetInPattern(10, 6, 1);
@@ -255,10 +286,10 @@ void enterState(TE_MENU_STATE state) {
         case eMENU_SET_MINUTE:
             vClearPattern();
             //show time
-            vAddNumToPattern(_stTime.u8Hour / 10, 2, 0);
-            vAddNumToPattern(_stTime.u8Hour % 10, 6, 0);
-            vAddNumToPattern(_stTime.u8Minute / 10, 2, 6);
-            vAddNumToPattern(_stTime.u8Minute % 10, 6, 6);
+            vAddNumToPattern(_time.u8Hour / 10, 2, 0);
+            vAddNumToPattern(_time.u8Hour % 10, 6, 0);
+            vAddNumToPattern(_time.u8Minute / 10, 2, 6);
+            vAddNumToPattern(_time.u8Minute % 10, 6, 6);
             //add colon
             vSetInPattern(10, 4, 1);
             vSetInPattern(10, 6, 1);
@@ -268,10 +299,10 @@ void enterState(TE_MENU_STATE state) {
         case eMENU_SET_MONTH:
             vClearPattern();
             //show day and month
-            vAddNumToPattern(_stDate.u8Day / 10, 2, 0);
-            vAddNumToPattern(_stDate.u8Day % 10, 6, 0);
-            vAddNumToPattern(_stDate.u8Month / 10, 2, 6);
-            vAddNumToPattern(_stDate.u8Month % 10, 6, 6);
+            vAddNumToPattern(_date.u8Day / 10, 2, 0);
+            vAddNumToPattern(_date.u8Day % 10, 6, 0);
+            vAddNumToPattern(_date.u8Month / 10, 2, 6);
+            vAddNumToPattern(_date.u8Month % 10, 6, 6);
             //add dot in front of month
             vSetInPattern(0, 8, 1);
             break;
@@ -280,8 +311,8 @@ void enterState(TE_MENU_STATE state) {
             //show year
             vAddNumToPattern(2, 2, 0);
             vAddNumToPattern(0, 6, 0);
-            vAddNumToPattern(_stDate.u8Year / 10, 2, 6);
-            vAddNumToPattern(_stDate.u8Year % 10, 6, 6);
+            vAddNumToPattern(_date.u8Year / 10, 2, 6);
+            vAddNumToPattern(_date.u8Year % 10, 6, 6);
             //add dot in front of last 2 digits of year
             vSetInPattern(0, 8, 1);
             break;
@@ -299,34 +330,38 @@ void eHandleButton(TE_BUTTONS eButton) {
         //the button is handled in this state
         switch (_eCurMenuState) {
             case eMENU_SET_CONFIG_ES_IST:
-                _eConfig = TOGGLE(_eConfig, eCONF_ES_IST);
+                _config = TOGGLE(_config, eCONF_ES_IST);
+                _configChanged = TRUE;
                 vClearPattern();
-                if (_eConfig & eCONF_ES_IST) {
+                if (_config & eCONF_ES_IST) {
                     vAddTextToPattern(eTEXT_ES_IST);
                 }
                 break;
 
             case eMENU_SET_CONFIG_MITTERNACHT:
-                _eConfig = TOGGLE(_eConfig, eCONF_MITTERNACHT);
+                _config = TOGGLE(_config, eCONF_MITTERNACHT);
+                _configChanged = TRUE;
                 vClearPattern();
-                if (_eConfig & eCONF_MITTERNACHT) {
+                if (_config & eCONF_MITTERNACHT) {
                     vAddTextToPattern(eTEXT_MITTERNACHT);
                 }
                 break;
 
             case eMENU_SET_CONFIG_NULL:
-                _eConfig = TOGGLE(_eConfig, eCONF_NULL);
+                _config = TOGGLE(_config, eCONF_NULL);
+                _configChanged = TRUE;
                 vClearPattern();
-                if (_eConfig & eCONF_NULL) {
+                if (_config & eCONF_NULL) {
                     vAddTextToPattern(eTEXT_NULL_H);
                     vAddTextToPattern(eTEXT_NULL_UHR);
                 }
                 break;
 
             case eMENU_SET_CONFIG_VIERTEL_VOR_NACH:
-                _eConfig = TOGGLE(_eConfig, eCONF_VIERTEL_VOR_NACH);
+                _config = TOGGLE(_config, eCONF_VIERTEL_VOR_NACH);
+                _configChanged = TRUE;
                 vClearPattern();
-                if (_eConfig & eCONF_VIERTEL_VOR_NACH) {
+                if (_config & eCONF_VIERTEL_VOR_NACH) {
                     vAddTextToPattern(eTEXT_VIERTEL);
                     vAddTextToPattern(eTEXT_VOR);
                     vAddTextToPattern(eTEXT_NACH);
@@ -334,10 +369,12 @@ void eHandleButton(TE_BUTTONS eButton) {
                     vAddTextToPattern(eTEXT_DREIVIERTEL);
                 }
                 break;
+
             case eMENU_SET_CONFIG_ZWANZIG_VOR_NACH:
-                _eConfig = TOGGLE(_eConfig, eCONF_ZWANZIG_VOR_NACH);
+                _config = TOGGLE(_config, eCONF_ZWANZIG_VOR_NACH);
+                _configChanged = TRUE;
                 vClearPattern();
-                if (_eConfig & eCONF_ZWANZIG_VOR_NACH) {
+                if (_config & eCONF_ZWANZIG_VOR_NACH) {
                     vAddTextToPattern(eTEXT_ZWANZIG);
                     vAddTextToPattern(eTEXT_VOR);
                     vAddTextToPattern(eTEXT_NACH);
@@ -346,55 +383,73 @@ void eHandleButton(TE_BUTTONS eButton) {
 
             case eMENU_SET_DAY:
                 //increment day
-                _stDate.u8Day++;
+                _date.u8Day++;
 
-                if (_stDate.u8Day == 32) {
-                    _stDate.u8Day = 1;
+                if (_date.u8Day == 32) {
+                    _date.u8Day = 1;
                 }
 
-                vAddNumToPattern(_stDate.u8Day / 10, 2, 0);
-                vAddNumToPattern(_stDate.u8Day % 10, 6, 0);
+                _dateChanged = TRUE;
+
+                vAddNumToPattern(_date.u8Day / 10, 2, 0);
+                vAddNumToPattern(_date.u8Day % 10, 6, 0);
 
                 break;
 
             case eMENU_SET_MONTH:
                 //increment month
-                _stDate.u8Month++;
-                if (_stDate.u8Month == 13) {
-                    _stDate.u8Month = 1;
+                _date.u8Month++;
+
+                if (_date.u8Month == 13) {
+                    _date.u8Month = 1;
                 }
-                vAddNumToPattern(_stDate.u8Month / 10, 2, 6);
-                vAddNumToPattern(_stDate.u8Month % 10, 6, 6);
+
+                _dateChanged = TRUE;
+
+                vAddNumToPattern(_date.u8Month / 10, 2, 6);
+                vAddNumToPattern(_date.u8Month % 10, 6, 6);
                 break;
 
             case eMENU_SET_YEAR:
                 //increment year
-                _stDate.u8Year++;
-                if (_stDate.u8Year == 30) {
-                    _stDate.u8Year = 16;
+                _date.u8Year++;
+
+                if (_date.u8Year == 30) {
+                    _date.u8Year = 16;
                 }
-                vAddNumToPattern(_stDate.u8Year / 10, 2, 6);
-                vAddNumToPattern(_stDate.u8Year % 10, 6, 6);
+
+                _dateChanged = TRUE;
+
+                vAddNumToPattern(_date.u8Year / 10, 2, 6);
+                vAddNumToPattern(_date.u8Year % 10, 6, 6);
                 break;
 
             case eMENU_SET_HOUR:
                 //increment hour
-                _stTime.u8Hour++;
-                if (_stTime.u8Hour == 24) {
-                    _stTime.u8Hour = 0;
+                _time.u8Hour++;
+
+                if (_time.u8Hour == 24) {
+                    _time.u8Hour = 0;
                 }
-                vAddNumToPattern(_stTime.u8Hour / 10, 2, 0);
-                vAddNumToPattern(_stTime.u8Hour % 10, 6, 0);
+
+                _timeChanged = TRUE;
+
+                vAddNumToPattern(_time.u8Hour / 10, 2, 0);
+                vAddNumToPattern(_time.u8Hour % 10, 6, 0);
                 break;
 
             case eMENU_SET_MINUTE:
                 //increment minute
-                _stTime.u8Minute++;
-                if (_stTime.u8Minute == 60) {
-                    _stTime.u8Minute = 0;
+                _time.u8Minute++;
+
+                if (_time.u8Minute == 60) {
+                    _time.u8Minute = 0;
                 }
-                vAddNumToPattern(_stTime.u8Minute / 10, 2, 6);
-                vAddNumToPattern(_stTime.u8Minute % 10, 6, 6);
+
+                _timeChanged = TRUE;
+
+                vAddNumToPattern(_time.u8Minute / 10, 2, 6);
+                vAddNumToPattern(_time.u8Minute % 10, 6, 6);
                 break;
 
             case eMENU_MAIN_TEST_DISPLAY:
@@ -403,7 +458,8 @@ void eHandleButton(TE_BUTTONS eButton) {
                 break;
 
             case eMENU_MAIN_INVALIDATE_TIME:
-                //TODO:
+                _timeInvalidate = TRUE;
+                vSetInPattern(10, 10, 1);
                 break;
 
             default:
@@ -412,18 +468,6 @@ void eHandleButton(TE_BUTTONS eButton) {
     }
 }
 
-BOOL vMenuGetTime(TS_TIME * pstTime) {
-    *pstTime = _stTime;
-}
-
-BOOL vMenuGetDate(TS_DATE * pstDate) {
-    *pstDate = _stDate;
-}
-
-BOOL eMenuGetConfig(TE_CONFIG * peConfig) {
-    return _eConfig;
-}
-
-inline TE_MENU_STATE eGetState() {
+inline TE_MENU_STATE menuGetState() {
     return _eCurMenuState;
 }

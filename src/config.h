@@ -17,8 +17,8 @@ extern "C" {
         eCONF_INVALID_MASK = 0x70
     } TE_CONFIG;
 
-    void saveConfig(TE_CONFIG eConfig);
-    inline TE_CONFIG getConfig();
+    void configSave(TE_CONFIG eConfig);
+    inline TE_CONFIG configGet();
 
 #ifdef	__cplusplus
 }

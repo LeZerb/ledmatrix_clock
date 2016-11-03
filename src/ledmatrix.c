@@ -22,6 +22,10 @@ static volatile bit _bDCF = 0,
         _bSWMenu = 0,
         _bSWSet = 0;
 
+static TS_TIME _stTime = {0, 0, 0}; //hold the time of the day
+static TS_DATE _stDate = {1, 1, 16}; //hold the current date
+static BOOL _bValidTime = 0; //is the time that is currently running valid
+
 static void interrupt _vInterrupt(void) {
     if (T0IF) {
         //we have an interrupt on T0
@@ -42,6 +46,35 @@ static void interrupt _vInterrupt(void) {
     }
 }
 
+void timeInvalidate() {
+    _bValidTime = FALSE;
+}
+
+void timeGet(TS_TIME *time) {
+    time->u8Hour = _stTime.u8Hour;
+    time->u8Minute = _stTime.u8Minute;
+    time->u8Second = _stTime.u8Second;
+}
+
+void timeSet(TS_TIME *time) {
+    _stTime.u8Hour = time->u8Hour;
+    _stTime.u8Minute = time->u8Minute;
+    _stTime.u8Second = time->u8Second;
+    _bValidTime = TRUE;
+}
+
+void dateGet(TS_DATE *date) {
+    date->u8Day = _stDate.u8Day;
+    date->u8Month = _stDate.u8Month;
+    date->u8Year = _stDate.u8Year;
+}
+
+void dateSet(TS_DATE *date) {
+    _stDate.u8Day = date->u8Day;
+    _stDate.u8Month = date->u8Month;
+    _stDate.u8Year = date->u8Year;
+}
+
 void main(void) {
     static bit _bLastSWMenu = 0,
             _bLastSWSet = 0;
@@ -52,15 +85,13 @@ void main(void) {
     _bLastSWSet = 1;
 
     while (1) {
-        static bit _bValidTime = 0, //is the time that is currently running valid
-                _bNightlyUpdate = 0, //time is invalidated at 4 o'clock - did we have a valid time
+        static BOOL _bNightlyUpdate = 0, //time is invalidated at 4 o'clock - did we have a valid time
                 _bLastDCF = 0; //last value which was input on DCF pin
         static TE_DISPLAY_STATE _eDisplayState = eDISP_TIME; //what is to be displayed on the display
-        static TS_TIME _stTime = {0, 0, 0}; //hold the time of the day
-        static TS_DATE _stDate = {1, 1, 16}; //hold the current date
         static U8 _u8DCFSecs = 0; //how many second wraps since last DCF in state change
         U8 u8CurClockInt = _u8ClkInt, //what is the current clock interrupt count
                 u8DisplayUpd = 0; //do we need to update the display content
+        static TE_MENU_STATE _lastMenuState = eMENU_ENTRY_COUNT;
         TE_MENU_STATE eMenuState;
 
         //clear the watchdog timer
@@ -187,28 +218,28 @@ void main(void) {
             }
         }
 
-        eMenuState = eGetState();
+        eMenuState = menuGetState();
 
-        if (eMenuState == eMENU_SHOW_TIME) {
-            _eDisplayState = eDISP_TIME_DIG;
-            vClearPattern();
+        if (_lastMenuState != eMenuState) {
+            _lastMenuState = eMenuState;
             u8DisplayUpd = 1;
-        } else if (eMenuState == eMENU_SHOW_SECOND) {
-            _eDisplayState = eDISP_SECOND;
-            vClearPattern();
-            u8DisplayUpd = 1;
-        } else if (eMenuState == eMENU_SHOW_DAY) {
-            _eDisplayState = eDISP_DAY;
-            vClearPattern();
-            u8DisplayUpd = 1;
-        } else if (eMenuState == eMENU_SHOW_YEAR) {
-            _eDisplayState = eDISP_YEAR;
-            vClearPattern();
-            u8DisplayUpd = 1;
-        } else if (eMenuState != eMENU_NIRVANA) {
-            _eDisplayState = eDISP_MENU;
-        } else {
-            _eDisplayState = eDISP_TIME;
+            if (eMenuState == eMENU_SHOW_TIME) {
+                _eDisplayState = eDISP_TIME_DIG;
+                vClearPattern();
+            } else if (eMenuState == eMENU_SHOW_SECOND) {
+                _eDisplayState = eDISP_SECOND;
+                vClearPattern();
+            } else if (eMenuState == eMENU_SHOW_DAY) {
+                _eDisplayState = eDISP_DAY;
+                vClearPattern();
+            } else if (eMenuState == eMENU_SHOW_YEAR) {
+                _eDisplayState = eDISP_YEAR;
+                vClearPattern();
+            } else if (eMenuState != eMENU_NIRVANA) {
+                _eDisplayState = eDISP_MENU;
+            } else {
+                _eDisplayState = eDISP_TIME;
+            }
         }
 
         //enable last row for DCF reception blinking when no valid time is set
@@ -242,17 +273,15 @@ void main(void) {
             //show current second
             static U8 _u8LastSec = 0xFF;
 
-            if (u8DisplayUpd ||
-                    _u8LastSec != _stTime.u8Second) {
-                if (u8DisplayUpd ||
-                        (_u8LastSec / 10) != (_stTime.u8Second / 10)) {
-                    vAddNumToPattern(_stTime.u8Second / 10, 2, 3);
-                }
+            if (u8DisplayUpd || (_u8LastSec % 10) != (_stTime.u8Second % 10)) {
+                vAddNumToPattern(_stTime.u8Second % 10, 6, 3);
 
-                _u8LastSec = _stTime.u8Second;
-
-                vAddNumToPattern(_u8LastSec % 10, 6, 3);
             }
+            if (u8DisplayUpd || (_u8LastSec / 10) != (_stTime.u8Second / 10)) {
+                vAddNumToPattern(_stTime.u8Second / 10, 2, 3);
+            }
+
+            _u8LastSec = _stTime.u8Second;
 
             vWritePattern();
         } else if (_eDisplayState == eDISP_DAY) {
@@ -277,8 +306,7 @@ void main(void) {
             //show current year 20xx
             static U8 _u8LastYear;
 
-            if (u8DisplayUpd ||
-                    _u8LastYear != _stDate.u8Year) {
+            if (u8DisplayUpd || _u8LastYear != _stDate.u8Year) {
                 _u8LastYear = _stDate.u8Year;
 
                 vAddNumToPattern(2, 2, 0);
@@ -288,8 +316,7 @@ void main(void) {
             }
 
             vWritePattern();
-        } else if (_bValidTime &&
-                _eDisplayState == eDISP_TIME) {
+        } else if (_bValidTime && _eDisplayState == eDISP_TIME) {
             vWriteTime(&_stTime, 0xFF);
         } else {
             COL10 = _bLastDCF;

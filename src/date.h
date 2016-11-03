@@ -17,4 +17,10 @@ typedef struct {
 
 U8 u8IsValidDate(TS_DATE *pstDate);
 
+void timeInvalidate();
+void timeGet(TS_TIME *time);
+void timeSet(TS_TIME *time);
+void dateGet(TS_DATE *date);
+void dateSet(TS_DATE *date);
+
 #endif

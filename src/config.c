@@ -7,7 +7,7 @@
 static BOOL _wasLoaded = FALSE;
 static U8 _config = 0;
 
-void loadConfig() {
+void configLoad() {
     _config = eeprom_read(eEEP_CONFIG_OFFSET);
 
     if (_config & eCONF_INVALID_MASK || !(_config & eCONF_VALID)) {
@@ -17,7 +17,7 @@ void loadConfig() {
     _wasLoaded = TRUE;
 }
 
-void saveConfig(TE_CONFIG eConfig) {
+void configSave(TE_CONFIG eConfig) {
     U8 config;
 
     config = eConfig;
@@ -25,7 +25,7 @@ void saveConfig(TE_CONFIG eConfig) {
     config |= eCONF_VALID;
 
     if (!_wasLoaded) {
-        loadConfig();
+        configLoad();
     }
 
     if (_config == config) {
@@ -37,9 +37,9 @@ void saveConfig(TE_CONFIG eConfig) {
     _config = eeprom_read(eEEP_CONFIG_OFFSET);
 }
 
-inline TE_CONFIG getConfig() {
+inline TE_CONFIG configGet() {
     if (!_wasLoaded) {
-        loadConfig();
+        configLoad();
     }
 
     return _config;
