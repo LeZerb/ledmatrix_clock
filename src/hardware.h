@@ -38,7 +38,7 @@
 
 //LED matrix
 #define NUM_COLS (11)
-#define NUM_ROWS (12)
+#define NUM_ROWS (12) //last row is for 4 minute LEDs
 
 #define COL0  RA0
 #define COL1  RA1

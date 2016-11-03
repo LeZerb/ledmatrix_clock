@@ -7,9 +7,13 @@
 #include <stdint.h>
 #include "hardware.h"
 
-#define U8  uint8_t
-#define U16 uint16_t
-#define U32 uint32_t
+typedef uint8_t U8;
+typedef uint16_t U16;
+typedef uint32_t U32;
+
+typedef uint8_t BOOL;
+#define FALSE (0)
+#define TRUE (!FALSE)
 
 #define SECS_IN_MIN                        (60)
 #define SECS_IN_5_MIN         (5 * SECS_IN_MIN)

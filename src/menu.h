@@ -1,48 +1,48 @@
 #ifndef _MENU_H_
 #define _MENU_H_
 
+#include "config.h"
 #include "date.h"
 
 //typedefs
-typedef enum
-{
-  //do not change the button order
-  eBUTTON_MENU,
-  eBUTTON_SET,
-  eBUTTON_COUNT
-}TE_BUTTONS;
 
-typedef enum
-{
-  eMENU_RC_OK,
-  eMENU_RC_ENTERED,
-  eMENU_RC_LEFT,
-  eMENU_RC_TIME_AVAIL,
-  eMENU_RC_DATE_AVAIL,
-  eMENU_RC_TIME_INVALID,
-  eMENU_RC_SHOW_DIGTIME,
-  eMENU_RC_SHOW_SECOND,
-  eMENU_RC_SHOW_DAY,
-  eMENU_RC_SHOW_YEAR,
-  eMENU_RC_CONFIG_CHANGED,
-  eMENU_RC_ERROR
-}TE_MENU_RC;
+typedef enum {
+    //do not change menu item order
+    eMENU_NIRVANA, //initial state
+    eMENU_MAIN_FIRST, //first main menu entry
+    eMENU_MAIN_CONFIG = eMENU_MAIN_FIRST, //main menu config
+    eMENU_MAIN_TIME, //main menu time
+    eMENU_MAIN_INVALIDATE_TIME, //main menu invalidate time
+    eMENU_MAIN_TEST_DISPLAY, //main menu test display
+    eMENU_SET_CONFIG_ES_IST, //change config for es ist
+    eMENU_SET_CONFIG_VIERTEL_VOR_NACH, //change config for viertel vor/nach mode
+    eMENU_SET_CONFIG_ZWANZIG_VOR_NACH, //change config for zwanzig vor/nach mode
+    eMENU_SET_CONFIG_MITTERNACHT, //change config for mitternacht mode
+    eMENU_SET_CONFIG_NULL, //change config for null uhr mode
+    eMENU_SET_HOUR, //set hour menu
+    eMENU_SET_MINUTE, //set minute menu
+    eMENU_SET_DAY, //set day menu
+    eMENU_SET_MONTH, //set month menu
+    eMENU_SET_YEAR, //set year menu
+    eMENU_SHOW_TIME, //show time
+    eMENU_SHOW_SECOND, //show second
+    eMENU_SHOW_DAY, //show day
+    eMENU_SHOW_YEAR, //show year
+    eMENU_ENTRY_COUNT
+} TE_MENU_STATE;
 
-typedef enum
-{
-  eMENU_CONF_DREIVIERTEL = 0b0,
-  eMENU_CONF_VIERTEL_VOR = 0b1,          
-  eMENU_CONF_VIERTEL_VOR_BIT = eMENU_CONF_VIERTEL_VOR,         //bit 0 identifies viertel nach/vor mode
-  eMENU_CONF_DREIVIERTEL_ZWANZIG = 0b10,
-  eMENU_CONF_ZWANZIG_VOR_BIT = eMENU_CONF_DREIVIERTEL_ZWANZIG, //bit 1 identifies zwanzig nach/vor mode
-  eMENU_CONF_VIERTEL_VOR_ZWANZIG = 0b11,
-  eMENU_CONF_NUM
-}TE_MENU_CONFIG;
+typedef enum {
+    //do not change the button order
+    eBUTTON_MENU,
+    eBUTTON_SET,
+    eBUTTON_COUNT
+} TE_BUTTONS;
 
 //functions
-TE_MENU_RC eHandleButton(TE_BUTTONS eButton, TS_TIME *pstTime, TS_DATE *pstCurDate, TE_MENU_CONFIG eConfig);
-void vMenuGetTime(TS_TIME *pstTime);
-void vMenuGetDate(TS_DATE *pstDate);
-TE_MENU_CONFIG eMenuGetConfig(void);
+
+//return TRUE when we are in the menu
+void eHandleButton(TE_BUTTONS eButton);
+//return TRUE if we are in the menu
+inline TE_MENU_STATE eGetState();
 
 #endif

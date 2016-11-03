@@ -4,12 +4,12 @@
 #include "date.h"
 
 //typedefs
-typedef enum
-{
-  eDCF_OK,
-  eDCF_TIME_SET,
-  eDCF_ERROR
-}TE_DCF_RC;
+
+typedef enum {
+    eDCF_OK,
+    eDCF_TIME_SET,
+    eDCF_ERROR
+} TE_DCF_RC;
 
 //functions
 
