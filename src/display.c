@@ -110,7 +110,7 @@ static const TS_POSITION _astPos[eTEXT_NUM_ENTRIES] = {
     //eHALB
     {
         {5},
-        {0b0000011100000000}
+        {0b1111000000000000}
     },
     //eMITTERNACHT
     {
@@ -598,22 +598,28 @@ void vAddTextToPattern(TE_CLOCK_TEXT eText) {
     }
 }
 
+void vRemoveTextFromPattern(TE_CLOCK_TEXT eText) {
+    U8 u8Col;
+
+    for (u8Col = 0; u8Col < NUM_COLS; u8Col++) {
+        if (_astPos[eText].u16Cols & _au16ColBit[u8Col]) {
+            _au16Pattern[_astPos[eText].u8Row] &= _au16ColClrBit[u8Col];
+        }
+    }
+}
+
 void vTestDisplay(void) {
     U8 u8Row, u8Col;
 
     for (u8Row = 0; u8Row < NUM_ROWS; u8Row++) {
         _vOnOffRow(u8Row, 1);
-
         for (u8Col = 0; u8Col < NUM_COLS; u8Col++) {
             //switch current column on
             _vOnOffCol(u8Col, 1);
-
             DELAY_MS(50);
-
             //switch current column off
             _vOnOffCol(u8Col, 0);
         }
-
         _vOnOffRow(u8Row, 0);
     }
 }
@@ -653,7 +659,7 @@ void vWritePattern() {
         }
 
         _vOnOffRow(u8Row, 1);
-        DELAY_US(800);
+        DELAY_US(1000);
         _vOnOffRow(0xFF, 0);
     }
 }

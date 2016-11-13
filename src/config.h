@@ -14,7 +14,7 @@ extern "C" {
         eCONF_MITTERNACHT = 0x08, //bit 3 identifies mitternacht enable
         eCONF_NULL = 0x10, //bit 4 identifies null uhr mode
         eCONF_VALID = 0x80, //msb identifies valid config when read from eeprom
-        eCONF_INVALID_MASK = 0x70
+        eCONF_INVALID_MASK = 0x60
     } TE_CONFIG;
 
     void configSave(TE_CONFIG eConfig);

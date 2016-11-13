@@ -10,7 +10,8 @@ static U8 _config = 0;
 void configLoad() {
     _config = eeprom_read(eEEP_CONFIG_OFFSET);
 
-    if (_config & eCONF_INVALID_MASK || !(_config & eCONF_VALID)) {
+    if ((_config & eCONF_INVALID_MASK) ||
+            ((_config & eCONF_VALID)) != eCONF_VALID) {
         _config = DEFAULT_CONFIG;
     }
 

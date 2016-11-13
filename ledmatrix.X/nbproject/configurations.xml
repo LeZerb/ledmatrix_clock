@@ -54,6 +54,8 @@
     </logicalFolder>
     <logicalFolder name="src" displayName="src" projectFiles="true">
       <logicalFolder name="mcc" displayName="mcc" projectFiles="true">
+        <logicalFolder name="mcc" displayName="mcc" projectFiles="true">
+        </logicalFolder>
       </logicalFolder>
       <logicalFolder name="mplab" displayName="mplab" projectFiles="true">
       </logicalFolder>
@@ -94,8 +96,6 @@
           <parseOnProdLoad>false</parseOnProdLoad>
           <alternateLoadableFile></alternateLoadableFile>
         </loading>
-        <subordinates>
-        </subordinates>
       </compileType>
       <makeCustomizationType>
         <makeCustomizationPreStepEnabled>false</makeCustomizationPreStepEnabled>
@@ -318,8 +318,6 @@
           <parseOnProdLoad>false</parseOnProdLoad>
           <alternateLoadableFile></alternateLoadableFile>
         </loading>
-        <subordinates>
-        </subordinates>
       </compileType>
       <makeCustomizationType>
         <makeCustomizationPreStepEnabled>false</makeCustomizationPreStepEnabled>
@@ -470,8 +468,6 @@
           <parseOnProdLoad>false</parseOnProdLoad>
           <alternateLoadableFile></alternateLoadableFile>
         </loading>
-        <subordinates>
-        </subordinates>
       </compileType>
       <makeCustomizationType>
         <makeCustomizationPreStepEnabled>false</makeCustomizationPreStepEnabled>
