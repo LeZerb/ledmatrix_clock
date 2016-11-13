@@ -2,6 +2,7 @@
 #include "config.h"
 #include "display.h"
 #include "menu.h"
+#include "snake.h"
 
 /*
  * set button is right (->), menu button is down (new line)
@@ -42,8 +43,13 @@ static const TE_MENU_STATE _aeMenuStateChanges[eMENU_ENTRY_COUNT][eBUTTON_COUNT]
     },
     //eMENU_MAIN_TEST_DISPLAY
     {
-        eMENU_NIRVANA,
+        eMENU_MAIN_SNAKE,
         eMENU_MAIN_TEST_DISPLAY
+    },
+    //eMENU_MAIN_SNAKE
+    {
+        eMENU_MAIN_SNAKE,
+        eMENU_MAIN_SNAKE
     },
     //eMENU_SET_CONFIG_ES_IST
     {
@@ -278,6 +284,9 @@ static void enterState(TE_MENU_STATE state) {
         case eMENU_MAIN_TIME:
             enterMainTime();
             break;
+        case eMENU_MAIN_SNAKE:
+            snakeInit();
+            break;
         case eMENU_SET_CONFIG_ES_IST:
             enterMainConfig();
             vSetInPattern(1, ROW_CONFIG, 1);
@@ -465,9 +474,20 @@ void eHandleButton(TE_BUTTONS eButton) {
                 break;
 
             case eMENU_MAIN_INVALIDATE_TIME:
-                _timeInvalidate = TRUE;
+                if (_timeInvalidate) {
+                    _timeInvalidate = FALSE;
+                } else {
+                    _timeInvalidate = TRUE;
+                }
                 vSetInPattern(10, 10, 1);
 
+                break;
+
+            case eMENU_MAIN_SNAKE:
+                if (snakeRun(eButton)) {
+                    leaveState(_eCurMenuState, eMENU_NIRVANA);
+                    enterState(eMENU_NIRVANA);
+                }
                 break;
         }
     }

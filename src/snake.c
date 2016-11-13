@@ -1,143 +1,169 @@
 #include "common.h"
+#include "date.h"
 #include "display.h"
 #include <stdlib.h>
 
-#define MAX_SNAKE 90
+#define MAX_SNAKE_LEN 90
 
 typedef enum {
-    eDIR_UP = 0,
-    eDIR_RIGHT = 1,
-    eDIR_DOWN = 2,
-    eDIR_LEFT = 3
+    eDIR_FIRST,
+    eDIR_UP,
+    eDIR_RIGHT,
+    eDIR_DOWN,
+    eDIR_LEFT,
+    eDIR_COUNT
 } TE_DIRECTION;
 
 typedef struct {
     U8 u8Col : 4;
     U8 u8Row : 4;
-}
-TS_SNAKE;
+} TS_COORDS;
 
 typedef struct {
-    U8 u8Col;
-    U8 u8Row;
-} TS_APPLE;
+    TS_COORDS snake[MAX_SNAKE_LEN];
+    U8 indexHead;
+    U8 indexTail;
+    TE_DIRECTION headDirection;
+} TS_SNAKE;
 
-static U8 _u8SnakeLen = 0;
-static TS_SNAKE _astSnake[MAX_SNAKE] = {0};
-static TE_DIRECTION _eDir;
-static TS_APPLE _stApple;
+static TS_SNAKE _snake;
+static TS_COORDS _apple;
 
-void snake_run(void) {
-    if (_u8SnakeLen == 0) {
-        //create the initial snake
+void snakeInit() {
+    TS_TIME time;
+    //create the initial snake
 
-        //initialize random generator
-        srand(12);
+    //initialize random generator
+    timeGet(&time);
+    srand(time.u8Hour * 60ul + time.u8Minute * 60 + time.u8Second);
 
-        //clear the pattern
-        vClearPattern();
+    //clear the pattern
+    vClearPattern();
 
-        //snake's initial tail is at here
-        _astSnake[1].u8Col = 4;
-        _astSnake[1].u8Row = 5;
+    _snake.snake[0].u8Col = 1;
+    _snake.snake[0].u8Row = 5;
+    _snake.snake[1].u8Col = 2;
+    _snake.snake[1].u8Row = 5;
+    _snake.snake[2].u8Col = 3;
+    _snake.snake[2].u8Row = 5;
+    _snake.snake[3].u8Col = 4;
+    _snake.snake[3].u8Row = 5;
+    _snake.indexTail = 0;
+    _snake.indexHead = 3;
+    _snake.headDirection = eDIR_RIGHT;
 
-        vSetInPattern(4, 5, 1);
+    vSetInPattern(_snake.snake[0].u8Col, _snake.snake[0].u8Row, 1);
+    vSetInPattern(_snake.snake[1].u8Col, _snake.snake[1].u8Row, 1);
+    vSetInPattern(_snake.snake[2].u8Col, _snake.snake[2].u8Row, 1);
+    vSetInPattern(_snake.snake[3].u8Col, _snake.snake[3].u8Row, 1);
 
-        //index 0 will always be the head
-        _astSnake[0].u8Col = 5;
-        _astSnake[0].u8Row = 5;
+    //create an apple
+    _apple.u8Col = rand() % NUM_COLS;
+    _apple.u8Row = rand() % (NUM_ROWS - 1);
 
-        vSetInPattern(5, 5, 1);
-
-        _u8SnakeLen = 2;
-        _eDir = eDIR_RIGHT;
-
-        //create an apple
-        _stApple.u8Col = rand() % NUM_COLS;
-        _stApple.u8Row = rand() % (NUM_ROWS - 1);
-    } else {
-        U8 u8NextCol = _astSnake[0].u8Col,
-                u8NextRow = _astSnake[0].u8Row,
-                u8AddToTail = 0,
-                u8CurPart = _u8SnakeLen - 1;
-
-        switch (_eDir) {
-            case eDIR_LEFT:
-            {
-                if (u8NextCol == 0) {
-                    u8NextCol = NUM_COLS - 1;
-                } else {
-                    u8NextCol--;
-                }
-            }
-                break;
-
-            case eDIR_RIGHT:
-            {
-                if (u8NextCol == NUM_COLS - 1) {
-                    u8NextCol = 0;
-                } else {
-                    u8NextCol++;
-                }
-            }
-                break;
-
-            case eDIR_UP:
-            {
-                if (u8NextRow == 0) {
-                    u8NextRow = NUM_ROWS - 2;
-                } else {
-                    u8NextRow--;
-                }
-            }
-                break;
-
-            case eDIR_DOWN:
-            {
-                if (u8NextRow == NUM_ROWS - 2) {
-                    u8NextRow = 0;
-                } else {
-                    u8NextRow++;
-                }
-            }
-                break;
-        }
-
-        if (_stApple.u8Col == u8NextCol &&
-                _stApple.u8Row == u8NextRow) {
-            //we have found an apple - don't remove the tail
-            u8AddToTail = 1;
-        }
-
-        if (u8AddToTail && (_u8SnakeLen <= MAX_SNAKE)) {
-            //add an item to the tail
-            _astSnake[u8CurPart + 1] = _astSnake[u8CurPart];
-            _u8SnakeLen++;
-        } else {
-            //remove the tail item from display
-            vSetInPattern(_astSnake[u8CurPart].u8Col, _astSnake[u8CurPart].u8Row, 0);
-        }
-
-        while (u8CurPart--) {
-            if (u8CurPart == 0) {
-                _astSnake[0].u8Col = u8NextCol;
-                _astSnake[0].u8Row = u8NextRow;
-
-                vSetInPattern(u8NextCol, u8NextRow, 1);
-            } else {
-                _astSnake[u8CurPart] = _astSnake[u8CurPart - 1];
-
-                if ((u8NextCol == _astSnake[u8CurPart].u8Col) &&
-                        (u8NextRow == _astSnake[u8CurPart].u8Row)) {
-                    //we have hit the snake's body
-                    _u8SnakeLen = 0;
-                    return;
-                }
-            }
-        }
-    }
+    vSetInPattern(_apple.u8Col, _apple.u8Row, 1);
 }
 
-void mmain(void) {
-    snake_run();
+BOOL snakeRun(TE_BUTTONS button) {
+    U8 nextCol;
+    U8 nextRow;
+    U8 index;
+
+    if (button == eBUTTON_MENU) {
+        _snake.headDirection--;
+        if (_snake.headDirection == eDIR_FIRST) {
+            _snake.headDirection = eDIR_COUNT - 1;
+        }
+    } else if (button == eBUTTON_SET) {
+        _snake.headDirection++;
+        if (_snake.headDirection == eDIR_COUNT) {
+            _snake.headDirection = eDIR_FIRST + 1;
+        }
+    }
+
+    switch (_snake.headDirection) {
+        case eDIR_LEFT:
+            nextCol = _snake.snake[_snake.indexHead].u8Col--;
+            if (nextCol >= NUM_COLS) {
+                nextCol = NUM_COLS - 1;
+            }
+            nextRow = _snake.snake[_snake.indexHead].u8Row;
+            break;
+
+        case eDIR_RIGHT:
+            nextCol = _snake.snake[_snake.indexHead].u8Col++;
+            if (nextCol >= NUM_COLS) {
+                nextCol = 0;
+            }
+            nextRow = _snake.snake[_snake.indexHead].u8Row;
+            break;
+
+        case eDIR_UP:
+            nextRow = _snake.snake[_snake.indexHead].u8Row--;
+            if (nextRow >= (NUM_ROWS - 1)) {
+                nextRow = NUM_ROWS - 2;
+            }
+            nextCol = _snake.snake[_snake.indexHead].u8Col;
+            break;
+
+        case eDIR_DOWN:
+            nextRow = _snake.snake[_snake.indexHead].u8Row++;
+            if (nextRow >= (NUM_ROWS - 1)) {
+                nextRow = 0;
+            }
+            nextCol = _snake.snake[_snake.indexHead].u8Col;
+            break;
+    }
+
+    if (_apple.u8Col == nextCol && _apple.u8Row == nextRow) {
+        //ate an apple -> we need a new
+        _apple.u8Col = rand() % NUM_COLS;
+        _apple.u8Row = rand() % (NUM_ROWS - 1);
+    } else {
+        //still hungry -> remove tail
+        if (!(_apple.u8Col == _snake.snake[_snake.indexTail].u8Col &&
+                _apple.u8Row == _snake.snake[_snake.indexTail].u8Row)) {
+            //only remove the tail if there is no apple in the same place
+            vSetInPattern(_snake.snake[_snake.indexTail].u8Col,
+                    _snake.snake[_snake.indexTail].u8Row, 0);
+        }
+        _snake.indexTail++;
+        if (_snake.indexTail >= MAX_SNAKE_LEN) {
+            _snake.indexTail = 0;
+        }
+    }
+
+    //display new head and save
+    vSetInPattern(nextCol, nextRow, 1);
+    _snake.indexHead++;
+    if (_snake.indexHead >= MAX_SNAKE_LEN) {
+        _snake.indexHead = 0;
+    }
+    _snake.snake[_snake.indexHead].u8Col = nextCol;
+    _snake.snake[_snake.indexHead].u8Row = nextRow;
+
+    if (_snake.indexHead == _snake.indexTail) {
+        //if tail is reached move tail forward
+        _snake.indexTail++;
+        if (_snake.indexTail >= MAX_SNAKE_LEN) {
+            _snake.indexTail = 0;
+        }
+    }
+
+    index = _snake.indexTail;
+    do {
+        if ((_snake.snake[_snake.indexHead].u8Col ==
+                _snake.snake[index].u8Col) &&
+                (_snake.snake[_snake.indexHead].u8Row ==
+                _snake.snake[index].u8Row)) {
+            //we hit the snakes body -> the game is done
+            return TRUE;
+        }
+        index++;
+        if (index >= MAX_SNAKE_LEN) {
+            index = 0;
+        }
+    } while (index != _snake.indexHead);
+
+    return FALSE;
 }
