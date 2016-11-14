@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "common.h"
 #include "init.h"
 #include "display.h"
@@ -75,9 +76,20 @@ void dateSet(TS_DATE *date) {
     _stDate.u8Year = date->u8Year;
 }
 
+static U8 _startMs[eMS_COUNT_NUM] = 0;
+
+U16 msSinceLastStart(TE_MS_COUNT eMsCount) {
+    // There is one timer interrupt each 1000 / WRAPS_A_SEC ms
+    return (abs((S8) _u8ClkInt - (S8) _startMs[eMsCount]) * (U32) 1000) / WRAPS_A_SEC;
+}
+
+void msStart(TE_MS_COUNT eMsCount) {
+    _startMs[eMsCount] = _u8ClkInt;
+}
+
 void main(void) {
-    static bit _bLastSWMenu = 0,
-            _bLastSWSet = 0;
+    static bit _bLastSWMenu = 0, _bLastSWSet = 0;
+    static BOOL _pendingMenu = FALSE, _pendingSet = FALSE;
 
     vInit();
 
@@ -158,45 +170,45 @@ void main(void) {
         //automatically set the clock if we do not have a valid time
         if (!_bValidTime) {
             DCF_POWER = 1;
-        }
 
-        //has there been a change on the DCF input
-        if (_bLastDCF != _bDCF) {
-            static U8 _u8LastClkInt = 0;
-            U32 u32TimeSince;
+            //has there been a change on the DCF input
+            if (_bLastDCF != _bDCF) {
+                static U8 _u8LastClkInt = 0;
+                U32 u32TimeSince;
 
-            TE_DCF_RC eDCFRc = eDCF_OK;
+                TE_DCF_RC eDCFRc = eDCF_OK;
 
-            _bLastDCF = _bDCF;
+                _bLastDCF = _bDCF;
 
-            if (_u8DCFSecs) {
-                //time is the rest of the last clock interrupt to the following wrap plus
-                //(wraps - 1) * 1000ms plus
-                //what has elapsed of the current second
-                u32TimeSince = ((WRAPS_A_SEC - _u8LastClkInt) * (U32) 1000) / WRAPS_A_SEC;
-                u32TimeSince += (_u8DCFSecs - 1) * (U32) 1000;
-                u32TimeSince += (u8CurClockInt * (U32) 1000) / WRAPS_A_SEC;
-            } else {
-                u32TimeSince = (((u8CurClockInt - _u8LastClkInt) * (U32) 250) / WRAPS_A_SEC) * 4;
-            }
+                if (_u8DCFSecs) {
+                    //time is the rest of the last clock interrupt to the following wrap plus
+                    //(wraps - 1) * 1000ms plus
+                    //what has elapsed of the current second
+                    u32TimeSince = ((WRAPS_A_SEC - _u8LastClkInt) * (U32) 1000) / WRAPS_A_SEC;
+                    u32TimeSince += (_u8DCFSecs - 1) * (U32) 1000;
+                    u32TimeSince += (u8CurClockInt * (U32) 1000) / WRAPS_A_SEC;
+                } else {
+                    u32TimeSince = (((u8CurClockInt - _u8LastClkInt) * (U32) 250) / WRAPS_A_SEC) * 4;
+                }
 
-            _u8DCFSecs = 0;
-            _u8LastClkInt = u8CurClockInt;
+                _u8DCFSecs = 0;
+                _u8LastClkInt = u8CurClockInt;
 
-            //add a bit to the DCF calculation and u32TimeSince should fit in 16bit after the calculation is done
-            eDCFRc = eDCFAddBit(_bLastDCF, (U16) u32TimeSince, &_stTime, &_stDate);
+                //add a bit to the DCF calculation and u32TimeSince should fit in 16bit after the calculation is done
+                eDCFRc = eDCFAddBit(_bLastDCF, (U16) u32TimeSince, &_stTime, &_stDate);
 
-            if (eDCFRc == eDCF_TIME_SET) {
-                _bValidTime = 1;
+                if (eDCFRc == eDCF_TIME_SET) {
+                    _bValidTime = 1;
 
-                //disable the DCF receiver
-                DCF_POWER = 0;
-            } else if (_bNightlyUpdate &&
-                    _stTime.u8Hour >= 5) {
-                //we have tried to update the time for an hour now -> give up
-                _bNightlyUpdate = 0;
-                _bValidTime = 1;
-                DCF_POWER = 0;
+                    //disable the DCF receiver
+                    DCF_POWER = 0;
+                } else if (_bNightlyUpdate &&
+                        _stTime.u8Hour >= 5) {
+                    //we have tried to update the time for an hour now -> give up
+                    _bNightlyUpdate = 0;
+                    _bValidTime = 1;
+                    DCF_POWER = 0;
+                }
             }
         }
 
@@ -204,17 +216,36 @@ void main(void) {
         if (_bLastSWMenu != _bSWMenu) {
             _bLastSWMenu = _bSWMenu;
 
-            //only handle button release
-            if (_bLastSWMenu) {
-                eHandleButton(eBUTTON_MENU);
+            // Only handle button release
+            if (!_bLastSWMenu) {
+                _pendingMenu = TRUE;
+                msStart(eMS_COUNT_BUTTON_MENU);
             }
-        }//has someone pushed the set button
-        else if (_bLastSWSet != _bSWSet) {
+        }
+
+        //has someone pushed the set button
+        if (_bLastSWSet != _bSWSet) {
             _bLastSWSet = _bSWSet;
 
-            //only handle button release
-            if (_bLastSWSet) {
+            // Only handle button release
+            if (!_bLastSWSet) {
+                _pendingSet = TRUE;
+                msStart(eMS_COUNT_BUTTON_SET);
+            }
+        }
+
+        // Deglitch buttons
+        if (_pendingMenu) {
+            if (msSinceLastStart(eMS_COUNT_BUTTON_MENU) > 50) {
+                eHandleButton(eBUTTON_MENU);
+                _pendingMenu = FALSE;
+                _pendingSet = FALSE;
+            }
+        } else if (_pendingSet) {
+            if (msSinceLastStart(eMS_COUNT_BUTTON_SET) > 50) {
                 eHandleButton(eBUTTON_SET);
+                _pendingMenu = FALSE;
+                _pendingSet = FALSE;
             }
         }
 
@@ -275,8 +306,8 @@ void main(void) {
 
             if (u8DisplayUpd || (_u8LastSec % 10) != (_stTime.u8Second % 10)) {
                 vAddNumToPattern(_stTime.u8Second % 10, 6, 3);
-
             }
+
             if (u8DisplayUpd || (_u8LastSec / 10) != (_stTime.u8Second / 10)) {
                 vAddNumToPattern(_stTime.u8Second / 10, 2, 3);
             }

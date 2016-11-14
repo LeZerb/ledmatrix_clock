@@ -1,7 +1,7 @@
+#include <stdlib.h>
 #include "common.h"
 #include "date.h"
 #include "display.h"
-#include <stdlib.h>
 
 #define MAX_SNAKE_LEN 90
 
@@ -80,6 +80,11 @@ BOOL snakeRun(TE_BUTTONS button) {
             _snake.headDirection = eDIR_FIRST + 1;
         }
     }
+
+    if (msSinceLastStart(eMS_COUNT_SNAKE) < 200) {
+        return FALSE;
+    }
+    msStart(eMS_COUNT_SNAKE);
 
     switch (_snake.headDirection) {
         case eDIR_LEFT:

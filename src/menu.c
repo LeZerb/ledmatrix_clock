@@ -48,8 +48,8 @@ static const TE_MENU_STATE _aeMenuStateChanges[eMENU_ENTRY_COUNT][eBUTTON_COUNT]
     },
     //eMENU_MAIN_SNAKE
     {
-        eMENU_MAIN_SNAKE,
-        eMENU_MAIN_SNAKE
+        eMENU_NIRVANA,
+        eMENU_SNAKE
     },
     //eMENU_SET_CONFIG_ES_IST
     {
@@ -121,6 +121,11 @@ static const TE_MENU_STATE _aeMenuStateChanges[eMENU_ENTRY_COUNT][eBUTTON_COUNT]
         eMENU_NIRVANA,
         eMENU_NIRVANA
     },
+    //eMENU_SNAKE
+    {
+        eMENU_SNAKE,
+        eMENU_SNAKE
+    }
 };
 
 static TE_MENU_STATE _eCurMenuState = eMENU_NIRVANA;
@@ -483,10 +488,11 @@ void eHandleButton(TE_BUTTONS eButton) {
 
                 break;
 
-            case eMENU_MAIN_SNAKE:
+            case eMENU_SNAKE:
                 if (snakeRun(eButton)) {
                     leaveState(_eCurMenuState, eMENU_NIRVANA);
-                    enterState(eMENU_NIRVANA);
+                    _eCurMenuState = eMENU_NIRVANA;
+                    enterState(_eCurMenuState);
                 }
                 break;
         }

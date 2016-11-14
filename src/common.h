@@ -7,6 +7,10 @@
 #include <stdint.h>
 #include "hardware.h"
 
+typedef int8_t S8;
+typedef int16_t S16;
+typedef int32_t S32;
+
 typedef uint8_t U8;
 typedef uint16_t U16;
 typedef uint32_t U32;
@@ -18,8 +22,20 @@ typedef bit BOOL;
 #define SECS_IN_MIN                        (60)
 #define SECS_IN_5_MIN         (5 * SECS_IN_MIN)
 
-#define DELAY_MS(x) CLRWDT(); __delay_ms((x));
-#define DELAY_US(x) CLRWDT(); __delay_us((x));
+#define DELAY_MS(x)      \
+{                        \
+    U16 delay = (x);     \
+    while (delay--) {    \
+        CLRWDT();        \
+        __delay_ms((1)); \
+    }                    \
+    CLRWDT();            \
+}
+
+#define DELAY_US(x)     \
+DELAY_MS((x) / 1000);   \
+__delay_us((x) % 1000); \
+CLRWDT();
 
 #define BIT_SET_8(var, bitno) ((var) |=   (U8)1 << (bitno))
 #define BIT_CLR_8(var, bitno) ((var) &= ~((U8)1 << (bitno)))

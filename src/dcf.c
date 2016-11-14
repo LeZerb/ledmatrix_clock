@@ -85,7 +85,7 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, TS_TIME *pstTime, TS_DATE *pstDate
         if (u16After > 1750 &&
                 u16After < 1950) {
             static TS_TIME _stFirstTime = 0;
-            static TS_DATE _stFirstDate = {1, 1, 10};
+            static TS_DATE _stFirstDate = {1, 1, 16};
 
             //a sync event has occurred
             _bSyncDone = 1;

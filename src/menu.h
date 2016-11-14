@@ -30,6 +30,7 @@ typedef enum {
     eMENU_SHOW_SECOND, //show second
     eMENU_SHOW_DAY, //show day
     eMENU_SHOW_YEAR, //show year
+    eMENU_SNAKE, //play snake
     eMENU_ENTRY_COUNT
 } TE_MENU_STATE;
 
