@@ -8,12 +8,12 @@
 #define SNAKE_ROWS (NUM_ROWS - 1)
 
 typedef enum {
-    eDIR_FIRST,
-    eDIR_UP,
+    eDIR_FIRST = 1, // start at one to make the check easier
+    eDIR_UP = eDIR_FIRST,
     eDIR_RIGHT,
     eDIR_DOWN,
     eDIR_LEFT,
-    eDIR_COUNT
+    eDIR_LAST = eDIR_LEFT
 } TE_DIRECTION;
 
 typedef struct {
@@ -80,52 +80,51 @@ BOOL snakeRun(TE_BUTTONS button) {
 
     if (button == eBUTTON_MENU) {
         _snake.headDirection--;
-        if (_snake.headDirection == eDIR_FIRST) {
-            _snake.headDirection = eDIR_COUNT - 1;
+        if (_snake.headDirection < eDIR_FIRST) {
+            _snake.headDirection = eDIR_LAST;
         }
     } else if (button == eBUTTON_SET) {
         _snake.headDirection++;
-        if (_snake.headDirection == eDIR_COUNT) {
-            _snake.headDirection = eDIR_FIRST + 1;
+        if (_snake.headDirection > eDIR_LAST) {
+            _snake.headDirection = eDIR_FIRST;
         }
     }
 
     if (msSinceLastStart(eMS_COUNT_SNAKE) < 200) {
-        return FALSE;
+        return _gameOver;
     }
     msStart(eMS_COUNT_SNAKE);
 
+    nextCol = _snake.snake[_snake.indexHead].u8Col;
+    nextRow = _snake.snake[_snake.indexHead].u8Row;
+
     switch (_snake.headDirection) {
         case eDIR_LEFT:
-            nextCol = _snake.snake[_snake.indexHead].u8Col--;
+            nextCol--;
             if (nextCol >= SNAKE_COLS) {
                 nextCol = SNAKE_COLS - 1;
             }
-            nextRow = _snake.snake[_snake.indexHead].u8Row;
             break;
 
         case eDIR_RIGHT:
-            nextCol = _snake.snake[_snake.indexHead].u8Col++;
+            nextCol++;
             if (nextCol >= SNAKE_COLS) {
                 nextCol = 0;
             }
-            nextRow = _snake.snake[_snake.indexHead].u8Row;
             break;
 
         case eDIR_UP:
-            nextRow = _snake.snake[_snake.indexHead].u8Row--;
+            nextRow--;
             if (nextRow >= SNAKE_ROWS) {
                 nextRow = SNAKE_ROWS - 1;
             }
-            nextCol = _snake.snake[_snake.indexHead].u8Col;
             break;
 
         case eDIR_DOWN:
-            nextRow = _snake.snake[_snake.indexHead].u8Row++;
+            nextRow++;
             if (nextRow >= SNAKE_ROWS) {
                 nextRow = 0;
             }
-            nextCol = _snake.snake[_snake.indexHead].u8Col;
             break;
     }
 
