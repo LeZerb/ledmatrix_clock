@@ -217,9 +217,9 @@ void main(void) {
         if (_bLastSWMenu != _bSWMenu) {
             _bLastSWMenu = _bSWMenu;
 
-            // Only handle button release
-            if (!_bLastSWMenu) {
-                _pendingMenu = TRUE;
+            _pendingMenu = _bLastSWMenu;
+
+            if (_bLastSWMenu) {
                 msStart(eMS_COUNT_BUTTON_MENU);
             }
         }
@@ -228,9 +228,10 @@ void main(void) {
         if (_bLastSWSet != _bSWSet) {
             _bLastSWSet = _bSWSet;
 
+            _pendingSet = _bLastSWSet;
+
             // Only handle button release
-            if (!_bLastSWSet) {
-                _pendingSet = TRUE;
+            if (_bLastSWSet) {
                 msStart(eMS_COUNT_BUTTON_SET);
             }
         }

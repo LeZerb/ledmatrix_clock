@@ -484,8 +484,7 @@ void eHandleButton(TE_BUTTONS eButton) {
                 } else {
                     _timeInvalidate = TRUE;
                 }
-                vSetInPattern(10, 10, 1);
-
+                vSetInPattern(10, 10, _timeInvalidate);
                 break;
 
             case eMENU_SNAKE:

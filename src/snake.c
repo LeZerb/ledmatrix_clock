@@ -4,6 +4,8 @@
 #include "display.h"
 
 #define MAX_SNAKE_LEN 90
+#define SNAKE_COLS NUM_COLS
+#define SNAKE_ROWS (NUM_ROWS - 1)
 
 typedef enum {
     eDIR_FIRST,
@@ -28,6 +30,7 @@ typedef struct {
 
 static TS_SNAKE _snake;
 static TS_COORDS _apple;
+static BOOL _gameOver = FALSE;
 
 void snakeInit() {
     TS_TIME time;
@@ -58,16 +61,22 @@ void snakeInit() {
     vSetInPattern(_snake.snake[3].u8Col, _snake.snake[3].u8Row, 1);
 
     //create an apple
-    _apple.u8Col = rand() % NUM_COLS;
-    _apple.u8Row = rand() % (NUM_ROWS - 1);
+    _apple.u8Col = rand() % SNAKE_COLS;
+    _apple.u8Row = rand() % SNAKE_ROWS;
 
     vSetInPattern(_apple.u8Col, _apple.u8Row, 1);
+
+    _gameOver = FALSE;
 }
 
 BOOL snakeRun(TE_BUTTONS button) {
     U8 nextCol;
     U8 nextRow;
     U8 index;
+
+    if (_gameOver) {
+        return TRUE;
+    }
 
     if (button == eBUTTON_MENU) {
         _snake.headDirection--;
@@ -89,15 +98,15 @@ BOOL snakeRun(TE_BUTTONS button) {
     switch (_snake.headDirection) {
         case eDIR_LEFT:
             nextCol = _snake.snake[_snake.indexHead].u8Col--;
-            if (nextCol >= NUM_COLS) {
-                nextCol = NUM_COLS - 1;
+            if (nextCol >= SNAKE_COLS) {
+                nextCol = SNAKE_COLS - 1;
             }
             nextRow = _snake.snake[_snake.indexHead].u8Row;
             break;
 
         case eDIR_RIGHT:
             nextCol = _snake.snake[_snake.indexHead].u8Col++;
-            if (nextCol >= NUM_COLS) {
+            if (nextCol >= SNAKE_COLS) {
                 nextCol = 0;
             }
             nextRow = _snake.snake[_snake.indexHead].u8Row;
@@ -105,33 +114,31 @@ BOOL snakeRun(TE_BUTTONS button) {
 
         case eDIR_UP:
             nextRow = _snake.snake[_snake.indexHead].u8Row--;
-            if (nextRow >= (NUM_ROWS - 1)) {
-                nextRow = NUM_ROWS - 2;
+            if (nextRow >= SNAKE_ROWS) {
+                nextRow = SNAKE_ROWS - 1;
             }
             nextCol = _snake.snake[_snake.indexHead].u8Col;
             break;
 
         case eDIR_DOWN:
             nextRow = _snake.snake[_snake.indexHead].u8Row++;
-            if (nextRow >= (NUM_ROWS - 1)) {
+            if (nextRow >= SNAKE_ROWS) {
                 nextRow = 0;
             }
             nextCol = _snake.snake[_snake.indexHead].u8Col;
             break;
     }
 
-    if (_apple.u8Col == nextCol && _apple.u8Row == nextRow) {
-        //ate an apple -> we need a new
-        _apple.u8Col = rand() % NUM_COLS;
-        _apple.u8Row = rand() % (NUM_ROWS - 1);
+    if (nextCol == _apple.u8Col && nextRow == _apple.u8Row) {
+        // ate an apple -> we need a new
+        _apple.u8Col = rand() % SNAKE_COLS;
+        _apple.u8Row = rand() % SNAKE_ROWS;
+        // no need to remove the apple from display - is the new head
     } else {
         //still hungry -> remove tail
-        if (!(_apple.u8Col == _snake.snake[_snake.indexTail].u8Col &&
-                _apple.u8Row == _snake.snake[_snake.indexTail].u8Row)) {
-            //only remove the tail if there is no apple in the same place
-            vSetInPattern(_snake.snake[_snake.indexTail].u8Col,
-                    _snake.snake[_snake.indexTail].u8Row, 0);
-        }
+        //only remove the tail if there is no apple in the same place
+        vSetInPattern(_snake.snake[_snake.indexTail].u8Col,
+                _snake.snake[_snake.indexTail].u8Row, 0);
         _snake.indexTail++;
         if (_snake.indexTail >= MAX_SNAKE_LEN) {
             _snake.indexTail = 0;
@@ -155,14 +162,18 @@ BOOL snakeRun(TE_BUTTONS button) {
         }
     }
 
+    //display apple
+    vSetInPattern(_apple.u8Col, _apple.u8Row, 1);
+
     index = _snake.indexTail;
     do {
         if ((_snake.snake[_snake.indexHead].u8Col ==
                 _snake.snake[index].u8Col) &&
                 (_snake.snake[_snake.indexHead].u8Row ==
                 _snake.snake[index].u8Row)) {
-            //we hit the snakes body -> the game is done
-            return TRUE;
+            //we hit the snakes body -> game over
+            _gameOver = TRUE;
+            break;
         }
         index++;
         if (index >= MAX_SNAKE_LEN) {
@@ -170,5 +181,5 @@ BOOL snakeRun(TE_BUTTONS button) {
         }
     } while (index != _snake.indexHead);
 
-    return FALSE;
+    return _gameOver;
 }
