@@ -5,6 +5,7 @@
 #include "dcf.h"
 #include "menu.h"
 #include "date.h"
+#include "snake.h"
 
 //typedefs
 
@@ -275,6 +276,10 @@ void main(void) {
 
         //enable last row for DCF reception blinking when no valid time is set
         ROW10 = ((_eDisplayState == eDISP_TIME) && !_bValidTime) ? 1 : 0;
+
+        if (eMenuState == eMENU_SNAKE) {
+            snakeRun(eBUTTON_COUNT);
+        }
 
         if (_eDisplayState == eDISP_MENU) {
             //write the preconfigured menu pattern
