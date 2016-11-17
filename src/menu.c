@@ -295,9 +295,7 @@ static void enterState(TE_MENU_STATE state) {
         case eMENU_SET_CONFIG_ES_IST:
             enterMainConfig();
             vSetInPattern(1, ROW_CONFIG, 1);
-            if (_config & eCONF_ES_IST) {
-                vAddTextToPattern(eTEXT_ES_IST);
-            }
+            updateConfigEsIst();
             break;
         case eMENU_SET_CONFIG_MITTERNACHT:
             enterMainConfig();
@@ -489,8 +487,8 @@ void eHandleButton(TE_BUTTONS eButton) {
 
             case eMENU_SNAKE:
                 if (snakeRun(eButton)) {
-                    leaveState(_eCurMenuState, eMENU_NIRVANA);
-                    _eCurMenuState = eMENU_NIRVANA;
+                    leaveState(_eCurMenuState, eMENU_MAIN_SNAKE);
+                    _eCurMenuState = eMENU_MAIN_SNAKE;
                     enterState(_eCurMenuState);
                 }
                 break;
