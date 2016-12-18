@@ -13,7 +13,8 @@ extern "C" {
 #endif
 
     enum EEPROM_OFFSETS {
-        eEEP_CONFIG_OFFSET = 0
+        eEEP_CONFIG_OFFSET = 0,
+        eEEP_CONFIG_VALID_OFFSET = 1
     };
 
 

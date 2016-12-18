@@ -97,6 +97,8 @@ void main(void) {
     _bLastSWMenu = 1;
     _bLastSWSet = 1;
 
+    vSetBrightness((configGet() & eCONF_BRIGHTNESS) >> eCONF_BRIGHTNESS_SHIFT);
+
     while (1) {
         static BOOL _bNightlyUpdate = 0, //time is invalidated at 4 o'clock - did we have a valid time
                 _bLastDCF = 0; //last value which was input on DCF pin

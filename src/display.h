@@ -51,5 +51,6 @@ void vAddNumToPattern(U8 u8Num, U8 u8Col, U8 u8Row);
 void vWritePattern(void);
 void vAddTextToPattern(TE_CLOCK_TEXT eText);
 void vRemoveTextFromPattern(TE_CLOCK_TEXT eText);
+void vSetBrightness(U8 u8Brightness);
 
 #endif

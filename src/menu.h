@@ -16,6 +16,7 @@ typedef enum {
     eMENU_MAIN_TEST_DISPLAY, //main menu test display
     eMENU_MAIN_SNAKE, //main menu snake
     eMENU_MAIN_LAST = eMENU_MAIN_SNAKE, //last main menu entrya
+    eMENU_SET_CONFIG_BRIGHTNESS, //change brightness
     eMENU_SET_CONFIG_ES_IST, //change config for es ist
     eMENU_SET_CONFIG_VIERTEL_VOR_NACH, //change config for viertel vor/nach mode
     eMENU_SET_CONFIG_ZWANZIG_VOR_NACH, //change config for zwanzig vor/nach mode

@@ -2,16 +2,16 @@
 #include "eeprom.h"
 #include "config.h"
 
-#define DEFAULT_CONFIG (eCONF_VALID | eCONF_ES_IST)
+#define DEFAULT_CONFIG (eCONF_BRIGHTNESS | eCONF_ES_IST)
 
 static BOOL _wasLoaded = FALSE;
 static U8 _config = 0;
 
 void configLoad() {
+    U8 valid = eeprom_read(eEEP_CONFIG_VALID_OFFSET);
     _config = eeprom_read(eEEP_CONFIG_OFFSET);
 
-    if ((_config & eCONF_INVALID_MASK) ||
-            ((_config & eCONF_VALID)) != eCONF_VALID) {
+    if (valid != eCONF_VALID) {
         _config = DEFAULT_CONFIG;
     }
 
@@ -22,8 +22,6 @@ void configSave(TE_CONFIG eConfig) {
     U8 config;
 
     config = eConfig;
-    config &= ~eCONF_INVALID_MASK;
-    config |= eCONF_VALID;
 
     if (!_wasLoaded) {
         configLoad();
@@ -34,7 +32,8 @@ void configSave(TE_CONFIG eConfig) {
     }
 
     eeprom_write(eEEP_CONFIG_OFFSET, config);
-    //read again in order to wait for the eeprom write to complete
+    eeprom_write(eEEP_CONFIG_VALID_OFFSET, eCONF_VALID);
+    //read again in order to wait for the eeprom writes to complete
     _config = eeprom_read(eEEP_CONFIG_OFFSET);
 }
 

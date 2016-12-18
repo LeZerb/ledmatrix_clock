@@ -3,6 +3,10 @@
 #include "config.h"
 #include "display.h"
 
+//defines
+#define ROW_TIME (1200) // 1s / 60fps / 12rows = 1389us
+#define MAX_BRIGHTNESS (eCONF_BRIGHTNESS >> eCONF_BRIGHTNESS_SHIFT)
+
 //typedefs
 
 typedef struct {
@@ -12,6 +16,18 @@ typedef struct {
 
 //variables
 static U16 _au16Pattern[PATTERN_SIZE];
+static U8 _brightness = MAX_BRIGHTNESS;
+
+static const U16 _aRowOnTime[MAX_BRIGHTNESS + 1] = {
+    (ROW_TIME * 1) / (MAX_BRIGHTNESS + 1),
+    (ROW_TIME * 2) / (MAX_BRIGHTNESS + 1),
+    (ROW_TIME * 3) / (MAX_BRIGHTNESS + 1),
+    (ROW_TIME * 4) / (MAX_BRIGHTNESS + 1),
+    (ROW_TIME * 5) / (MAX_BRIGHTNESS + 1),
+    (ROW_TIME * 6) / (MAX_BRIGHTNESS + 1),
+    (ROW_TIME * 7) / (MAX_BRIGHTNESS + 1),
+    (ROW_TIME * 8) / (MAX_BRIGHTNESS + 1)
+};
 
 static const U16 _au16ColBit[16] = {
     0x8000,
@@ -425,7 +441,7 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
 
     config = configGet();
 
-    if (!(config & eCONF_ES_IST)) {
+    if (config & eCONF_ES_IST) {
         aucTime[ucCurrentItem++] = eTEXT_ES_IST;
     }
 
@@ -550,8 +566,9 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
             }
 
             _vOnOffRow(ucRow, 1);
-            DELAY_US(1200);
+            DELAY_US(_aRowOnTime[_brightness]);
             _vOnOffRow(ucRow, 0);
+            DELAY_US(ROW_TIME - _aRowOnTime[_brightness]);
         }
     }
 
@@ -575,8 +592,9 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
             _vOnOffCol(0, 1);
 
             _vOnOffRow(NUM_ROWS - 1, 1);
-            DELAY_US(1200);
+            DELAY_US(_aRowOnTime[_brightness]);
             _vOnOffRow(NUM_ROWS - 1, 0);
+            DELAY_US(ROW_TIME - _aRowOnTime[_brightness]);
 
             break;
 
@@ -659,7 +677,15 @@ void vWritePattern() {
         }
 
         _vOnOffRow(u8Row, 1);
-        DELAY_US(1000);
+        DELAY_US(_aRowOnTime[_brightness]);
         _vOnOffRow(0xFF, 0);
+        DELAY_US(ROW_TIME - _aRowOnTime[_brightness]);
     }
+}
+
+void vSetBrightness(U8 brightness) {
+    if (brightness > MAX_BRIGHTNESS) {
+        brightness = MAX_BRIGHTNESS;
+    }
+    _brightness = brightness;
 }

@@ -29,7 +29,7 @@ static const TE_MENU_STATE _aeMenuStateChanges[eMENU_ENTRY_COUNT][eBUTTON_COUNT]
     //eMENU_MAIN_CONFIG
     {
         eMENU_MAIN_INVALIDATE_TIME,
-        eMENU_SET_CONFIG_ES_IST
+        eMENU_SET_CONFIG_BRIGHTNESS
     },
     //eMENU_MAIN_TIME
     {
@@ -50,6 +50,11 @@ static const TE_MENU_STATE _aeMenuStateChanges[eMENU_ENTRY_COUNT][eBUTTON_COUNT]
     {
         eMENU_NIRVANA,
         eMENU_SNAKE
+    },
+    //eMENU_SET_CONFIG_BRIGHTNESS
+    {
+        eMENU_SET_CONFIG_BRIGHTNESS,
+        eMENU_SET_CONFIG_ES_IST
     },
     //eMENU_SET_CONFIG_ES_IST
     {
@@ -133,6 +138,7 @@ static TS_TIME _oldTime = {0, 0, 0};
 static TS_TIME _time = {0, 0, 0};
 static TS_DATE _oldDate = {1, 1, 16};
 static TS_DATE _date = {1, 1, 16};
+static U8 _brightness = eCONF_BRIGHTNESS >> eCONF_BRIGHTNESS_SHIFT;
 static TE_CONFIG _oldConfig = 0;
 static TE_CONFIG _config = 0;
 static BOOL _timeInvalidate = FALSE;
@@ -218,6 +224,10 @@ static void updateYear() {
     vAddNumToPattern(_date.u8Year % 10, 6, 6);
 }
 
+static void updateConfigBrightness() {
+    vSetBrightness((_config & eCONF_BRIGHTNESS) >> eCONF_BRIGHTNESS_SHIFT);
+}
+
 static void updateConfigEsIst() {
     if (_config & eCONF_ES_IST) {
         vAddTextToPattern(eTEXT_ES_IST);
@@ -274,6 +284,7 @@ static void enterState(TE_MENU_STATE state) {
     switch (state) {
         case eMENU_MAIN_CONFIG:
             enterMainConfig();
+            updateConfigBrightness();
             updateConfigEsIst();
             updateConfigMitternacht();
             updateConfigNull();
@@ -292,9 +303,13 @@ static void enterState(TE_MENU_STATE state) {
         case eMENU_MAIN_SNAKE:
             snakeInit();
             break;
+        case eMENU_SET_CONFIG_BRIGHTNESS:
+            enterMainConfig();
+            vSetInPattern(1, ROW_CONFIG, 1);
         case eMENU_SET_CONFIG_ES_IST:
             enterMainConfig();
             vSetInPattern(1, ROW_CONFIG, 1);
+            vSetInPattern(2, ROW_CONFIG, 1);
             updateConfigEsIst();
             break;
         case eMENU_SET_CONFIG_MITTERNACHT:
@@ -303,6 +318,7 @@ static void enterState(TE_MENU_STATE state) {
             vSetInPattern(2, ROW_CONFIG, 1);
             vSetInPattern(3, ROW_CONFIG, 1);
             vSetInPattern(4, ROW_CONFIG, 1);
+            vSetInPattern(5, ROW_CONFIG, 1);
             updateConfigMitternacht();
             break;
         case eMENU_SET_CONFIG_NULL:
@@ -312,12 +328,14 @@ static void enterState(TE_MENU_STATE state) {
             vSetInPattern(3, ROW_CONFIG, 1);
             vSetInPattern(4, ROW_CONFIG, 1);
             vSetInPattern(5, ROW_CONFIG, 1);
+            vSetInPattern(6, ROW_CONFIG, 1);
             updateConfigNull();
             break;
         case eMENU_SET_CONFIG_VIERTEL_VOR_NACH:
             enterMainConfig();
             vSetInPattern(1, ROW_CONFIG, 1);
             vSetInPattern(2, ROW_CONFIG, 1);
+            vSetInPattern(3, ROW_CONFIG, 1);
             updateConfigViertelVor();
             break;
         case eMENU_SET_CONFIG_ZWANZIG_VOR_NACH:
@@ -325,6 +343,7 @@ static void enterState(TE_MENU_STATE state) {
             vSetInPattern(1, ROW_CONFIG, 1);
             vSetInPattern(2, ROW_CONFIG, 1);
             vSetInPattern(3, ROW_CONFIG, 1);
+            vSetInPattern(4, ROW_CONFIG, 1);
             updateConfigZwanzigVor();
             break;
         case eMENU_SET_DAY:
@@ -362,6 +381,7 @@ static void leaveState(TE_MENU_STATE state, TE_MENU_STATE newState) {
             case eMENU_NIRVANA:
                 _config = configGet();
                 _oldConfig = _config;
+                _brightness = (_oldConfig & eCONF_BRIGHTNESS) >> eCONF_BRIGHTNESS_SHIFT;
                 dateGet(&_date);
                 memcpy(&_oldDate, &_date, sizeof (_oldDate));
                 timeGet(&_time);
@@ -401,6 +421,16 @@ void eHandleButton(TE_BUTTONS eButton) {
     } else {
         //the button is handled in this state
         switch (_eCurMenuState) {
+            case eMENU_SET_CONFIG_BRIGHTNESS:
+                _brightness++;
+                if (_brightness > (eCONF_BRIGHTNESS >> eCONF_BRIGHTNESS_SHIFT)) {
+                    _brightness = 0;
+                }
+                _config &= ~eCONF_BRIGHTNESS;
+                _config |= _brightness << eCONF_BRIGHTNESS_SHIFT;
+                updateConfigBrightness();
+                break;
+
             case eMENU_SET_CONFIG_ES_IST:
                 _config = TOGGLE(_config, eCONF_ES_IST);
                 updateConfigEsIst();
