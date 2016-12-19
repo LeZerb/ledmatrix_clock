@@ -335,20 +335,7 @@ static void _vOnOffCol(unsigned char ucCol, unsigned char ucOn) {
             COL10 = ucOn;
             break;
 
-        case 0xFF:
-            COL0 = ucOn;
-            COL1 = ucOn;
-            COL2 = ucOn;
-            COL3 = ucOn;
-            COL4 = ucOn;
-            COL5 = ucOn;
-            COL6 = ucOn;
-            COL7 = ucOn;
-            COL8 = ucOn;
-            COL9 = ucOn;
-            COL10 = ucOn;
-            break;
-
+        case 0xFF: // fall through
         default:
             COL0 = 0;
             COL1 = 0;
@@ -417,7 +404,7 @@ static void _vOnOffRow(unsigned char ucRow, unsigned char ucOn) {
             ROW11 = ucOn;
             break;
 
-        case 0xFF:
+        case 0xFF: // fall through
         default:
             ROW0 = 0;
             ROW1 = 0;
@@ -692,6 +679,10 @@ void vWritePattern() {
     U8 u8Row, u8Col;
 
     for (u8Row = 0; u8Row < NUM_ROWS; u8Row++) {
+        if (!_au16Pattern[u8Row]) {
+            continue;
+        }
+
         for (u8Col = 0; u8Col < NUM_COLS; u8Col++) {
             _vOnOffCol(u8Col, (_au16Pattern[u8Row] & _au16ColBit[u8Col]) ? 1 : 0);
         }
@@ -701,11 +692,14 @@ void vWritePattern() {
         _vOnOffRow(u8Row, 0);
         DELAY_US(_aRowOffTime[_brightness]);
     }
+
+    _vOnOffCol(0xFF, 0);
 }
 
 void vSetBrightness(U8 brightness) {
     if (brightness > MAX_BRIGHTNESS) {
         brightness = MAX_BRIGHTNESS;
     }
+
     _brightness = brightness;
 }

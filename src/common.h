@@ -32,7 +32,7 @@ typedef bit BOOL;
     CLRWDT();            \
 }
 
-#define USEC_STEPS (128)
+#define USEC_STEPS (100)
 #define DELAY_US(x)             \
 {                               \
     U16 usec = (x) % 1000;      \

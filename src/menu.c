@@ -188,6 +188,9 @@ static void enterDate() {
     vAddNumToPattern(_date.u8Day % 10, 6, 0);
     vAddNumToPattern(_date.u8Month / 10, 2, 6);
     vAddNumToPattern(_date.u8Month % 10, 6, 6);
+    //remove colon
+    vSetInPattern(10, 4, 0);
+    vSetInPattern(10, 6, 0);
 }
 
 static void enterYear() {
@@ -197,6 +200,9 @@ static void enterYear() {
     vAddNumToPattern(0, 6, 0);
     vAddNumToPattern(_date.u8Year / 10, 2, 6);
     vAddNumToPattern(_date.u8Year % 10, 6, 6);
+    //remove colon
+    vSetInPattern(10, 4, 0);
+    vSetInPattern(10, 6, 0);
 }
 
 static void updateHour() {
