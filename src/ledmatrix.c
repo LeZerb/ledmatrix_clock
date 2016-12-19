@@ -131,6 +131,17 @@ void main(void) {
                 _stTime.u8Second = 0;
                 _stTime.u8Minute++;
 
+                //get the time every night at 4 o'clock even though we have a valid time
+                if (_bValidTime &&
+                        _stTime.u8Hour == 4 &&
+                        _stTime.u8Minute == 0) {
+                    //we need to invalidate the time here
+                    //since showing the current time does not allow correct DCF receiving
+                    //interruptions would disturb the DCF input signals
+                    _bNightlyUpdate = 1;
+                    _bValidTime = 0;
+                }
+
                 if (_stTime.u8Minute >= 60) {
                     //this is a new hour
                     _stTime.u8Minute = 0;
@@ -156,18 +167,6 @@ void main(void) {
                     }
                 }
             }
-        }
-
-        //get the time every night at 4 o'clock even though we have a valid time
-        if (_bValidTime &&
-                _stTime.u8Hour == 4 &&
-                _stTime.u8Minute == 0 &&
-                _stTime.u8Second == 0) {
-            //we need to invalidate the time here
-            //since showing the current time does not allow correct DCF receiving
-            //interruptions would disturb the DCF input signals
-            _bNightlyUpdate = 1;
-            _bValidTime = 0;
         }
 
         //automatically set the clock if we do not have a valid time
@@ -221,6 +220,7 @@ void main(void) {
 
             _pendingMenu = _bLastSWMenu;
 
+            // Only handle button release
             if (_bLastSWMenu) {
                 msStart(eMS_COUNT_BUTTON_MENU);
             }
@@ -278,7 +278,7 @@ void main(void) {
         }
 
         //enable last row for DCF reception blinking when no valid time is set
-        ROW10 = ((_eDisplayState == eDISP_TIME) && !_bValidTime) ? 1 : 0;
+        ROW10 = ((!_bValidTime) && (_eDisplayState == eDISP_TIME)) ? 1 : 0;
 
         if (eMenuState == eMENU_SNAKE) {
             snakeRun(eBUTTON_COUNT);

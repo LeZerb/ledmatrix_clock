@@ -32,15 +32,21 @@ typedef bit BOOL;
     CLRWDT();            \
 }
 
-#define DELAY_US(x)         \
-{                           \
-    U16 usec = (x) % 1000;  \
-    DELAY_MS((x) / 1000);   \
-    while(usec--)           \
-    {                       \
-        __delay_us(1);      \
-    }                       \
-    CLRWDT();               \
+#define USEC_STEPS (128)
+#define DELAY_US(x)             \
+{                               \
+    U16 usec = (x) % 1000;      \
+    DELAY_MS((x) / 1000);       \
+    while(usec)                 \
+    {                           \
+        __delay_us(USEC_STEPS); \
+        if (usec <= USEC_STEPS) \
+        {                       \
+            break;              \
+        }                       \
+        usec -= USEC_STEPS;     \
+    }                           \
+    CLRWDT();                   \
 }
 
 #define BIT_SET_8(var, bitno) ((var) |=   (U8)1 << (bitno))

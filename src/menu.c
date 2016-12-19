@@ -305,7 +305,13 @@ static void enterState(TE_MENU_STATE state) {
             break;
         case eMENU_SET_CONFIG_BRIGHTNESS:
             enterMainConfig();
+            updateConfigEsIst();
+            updateConfigMitternacht();
+            updateConfigNull();
+            updateConfigViertelVor();
+            updateConfigZwanzigVor();
             vSetInPattern(1, ROW_CONFIG, 1);
+            break;
         case eMENU_SET_CONFIG_ES_IST:
             enterMainConfig();
             vSetInPattern(1, ROW_CONFIG, 1);

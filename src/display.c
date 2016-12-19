@@ -4,8 +4,17 @@
 #include "display.h"
 
 //defines
-#define ROW_TIME (1200) // 1s / 60fps / 12rows = 1389us
+#define ROW_TIME (8 * USEC_STEPS) // 1s / 60fps / 12rows = 1389us
 #define MAX_BRIGHTNESS (eCONF_BRIGHTNESS >> eCONF_BRIGHTNESS_SHIFT)
+
+#define ROW_ON_TIME_0 (1 * USEC_STEPS)
+#define ROW_ON_TIME_1 (2 * USEC_STEPS)
+#define ROW_ON_TIME_2 (3 * USEC_STEPS)
+#define ROW_ON_TIME_3 (4 * USEC_STEPS)
+#define ROW_ON_TIME_4 (5 * USEC_STEPS)
+#define ROW_ON_TIME_5 (6 * USEC_STEPS)
+#define ROW_ON_TIME_6 (7 * USEC_STEPS)
+#define ROW_ON_TIME_7 (8 * USEC_STEPS)
 
 //typedefs
 
@@ -19,14 +28,25 @@ static U16 _au16Pattern[PATTERN_SIZE];
 static U8 _brightness = MAX_BRIGHTNESS;
 
 static const U16 _aRowOnTime[MAX_BRIGHTNESS + 1] = {
-    (ROW_TIME * 1) / (MAX_BRIGHTNESS + 1),
-    (ROW_TIME * 2) / (MAX_BRIGHTNESS + 1),
-    (ROW_TIME * 3) / (MAX_BRIGHTNESS + 1),
-    (ROW_TIME * 4) / (MAX_BRIGHTNESS + 1),
-    (ROW_TIME * 5) / (MAX_BRIGHTNESS + 1),
-    (ROW_TIME * 6) / (MAX_BRIGHTNESS + 1),
-    (ROW_TIME * 7) / (MAX_BRIGHTNESS + 1),
-    (ROW_TIME * 8) / (MAX_BRIGHTNESS + 1)
+    ROW_ON_TIME_0,
+    ROW_ON_TIME_1,
+    ROW_ON_TIME_2,
+    ROW_ON_TIME_3,
+    ROW_ON_TIME_4,
+    ROW_ON_TIME_5,
+    ROW_ON_TIME_6,
+    ROW_ON_TIME_7
+};
+
+static const U16 _aRowOffTime[MAX_BRIGHTNESS + 1] = {
+    ROW_TIME - ROW_ON_TIME_0,
+    ROW_TIME - ROW_ON_TIME_1,
+    ROW_TIME - ROW_ON_TIME_2,
+    ROW_TIME - ROW_ON_TIME_3,
+    ROW_TIME - ROW_ON_TIME_4,
+    ROW_TIME - ROW_ON_TIME_5,
+    ROW_TIME - ROW_ON_TIME_6,
+    ROW_TIME - ROW_ON_TIME_7
 };
 
 static const U16 _au16ColBit[16] = {
@@ -568,7 +588,7 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
             _vOnOffRow(ucRow, 1);
             DELAY_US(_aRowOnTime[_brightness]);
             _vOnOffRow(ucRow, 0);
-            DELAY_US(ROW_TIME - _aRowOnTime[_brightness]);
+            DELAY_US(_aRowOffTime[_brightness]);
         }
     }
 
@@ -594,7 +614,7 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
             _vOnOffRow(NUM_ROWS - 1, 1);
             DELAY_US(_aRowOnTime[_brightness]);
             _vOnOffRow(NUM_ROWS - 1, 0);
-            DELAY_US(ROW_TIME - _aRowOnTime[_brightness]);
+            DELAY_US(_aRowOffTime[_brightness]);
 
             break;
 
@@ -678,8 +698,8 @@ void vWritePattern() {
 
         _vOnOffRow(u8Row, 1);
         DELAY_US(_aRowOnTime[_brightness]);
-        _vOnOffRow(0xFF, 0);
-        DELAY_US(ROW_TIME - _aRowOnTime[_brightness]);
+        _vOnOffRow(u8Row, 0);
+        DELAY_US(_aRowOffTime[_brightness]);
     }
 }
 
