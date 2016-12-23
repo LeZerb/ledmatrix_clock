@@ -22,8 +22,8 @@ typedef bit BOOL;
 #define SECS_IN_MIN                        (60)
 #define SECS_IN_5_MIN         (5 * SECS_IN_MIN)
 
-#define DELAY_MS(x) _delaywdt(((x) * _XTAL_FREQ) / 1000)
-#define DELAY_US(x) _delaywdt(((x) * _XTAL_FREQ) / 1000000)
+#define DELAY_MS(x) __delay_ms((x))
+#define DELAY_US(x) __delay_us((x))
 
 #define BIT_SET_8(var, bitno) ((var) |=   (U8)1 << (bitno))
 #define BIT_CLR_8(var, bitno) ((var) &= ~((U8)1 << (bitno)))
