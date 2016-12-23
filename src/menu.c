@@ -159,11 +159,17 @@ static void enterMainInvalidateTime() {
     vSetInPattern(0, ROW_TEST_INVALIDATE_TIME, 1);
 }
 
-#define ROW_CONFIG 9
+#define ROW_CONFIG (9)
+#define ROW_CORNER_LEDS (NUM_ROWS - 1)
 
 static void enterMainConfig() {
+    U8 col;
+
     vClearPattern();
     vSetInPattern(0, ROW_CONFIG, 1);
+    for (col = 0; col < NUM_COLS; col++) {
+        vSetInPattern(col, ROW_CORNER_LEDS, 1);
+    }
 }
 
 #define ROW_SET_TIME 10

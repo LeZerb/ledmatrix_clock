@@ -4,17 +4,18 @@
 #include "display.h"
 
 //defines
-#define ROW_TIME (8 * USEC_STEPS) // 1s / 60fps / 12rows = 1389us
+#define ROW_TIME_RES (125)
+#define ROW_TIME (8 * ROW_TIME_RES) // 1s / 60fps / 12rows = 1389us
 #define MAX_BRIGHTNESS (eCONF_BRIGHTNESS >> eCONF_BRIGHTNESS_SHIFT)
 
-#define ROW_ON_TIME_0 (1 * USEC_STEPS)
-#define ROW_ON_TIME_1 (2 * USEC_STEPS)
-#define ROW_ON_TIME_2 (3 * USEC_STEPS)
-#define ROW_ON_TIME_3 (4 * USEC_STEPS)
-#define ROW_ON_TIME_4 (5 * USEC_STEPS)
-#define ROW_ON_TIME_5 (6 * USEC_STEPS)
-#define ROW_ON_TIME_6 (7 * USEC_STEPS)
-#define ROW_ON_TIME_7 (8 * USEC_STEPS)
+#define ROW_ON_TIME_0 (1 * ROW_TIME_RES)
+#define ROW_ON_TIME_1 (2 * ROW_TIME_RES)
+#define ROW_ON_TIME_2 (3 * ROW_TIME_RES)
+#define ROW_ON_TIME_3 (4 * ROW_TIME_RES)
+#define ROW_ON_TIME_4 (5 * ROW_TIME_RES)
+#define ROW_ON_TIME_5 (6 * ROW_TIME_RES)
+#define ROW_ON_TIME_6 (7 * ROW_TIME_RES)
+#define ROW_ON_TIME_7 (8 * ROW_TIME_RES)
 
 //typedefs
 
@@ -36,17 +37,6 @@ static const U16 _aRowOnTime[MAX_BRIGHTNESS + 1] = {
     ROW_ON_TIME_5,
     ROW_ON_TIME_6,
     ROW_ON_TIME_7
-};
-
-static const U16 _aRowOffTime[MAX_BRIGHTNESS + 1] = {
-    ROW_TIME - ROW_ON_TIME_0,
-    ROW_TIME - ROW_ON_TIME_1,
-    ROW_TIME - ROW_ON_TIME_2,
-    ROW_TIME - ROW_ON_TIME_3,
-    ROW_TIME - ROW_ON_TIME_4,
-    ROW_TIME - ROW_ON_TIME_5,
-    ROW_TIME - ROW_ON_TIME_6,
-    ROW_TIME - ROW_ON_TIME_7
 };
 
 static const U16 _au16ColBit[16] = {
@@ -166,7 +156,7 @@ static const TS_POSITION _astPos[eTEXT_NUM_ENTRIES] = {
     //eZWEI_H
     {
         {5},
-        {0b00000111100000000}
+        {0b0000011110000000}
     },
     //eDREI_H
     {
@@ -427,10 +417,9 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
     U8 ucHour,
             ucMinute,
             aucTime[MAX_ITEMS],
-            ucCurrentItem;
+            ucCurrentItem,
+            ucI;
     TE_CONFIG config;
-
-    memset(aucTime, 0xFF, MAX_ITEMS);
 
     ucHour = pstTime->u8Hour;
 
@@ -444,9 +433,9 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
         return;
     }
 
-    ucCurrentItem = 0;
-
     config = configGet();
+
+    ucCurrentItem = 0;
 
     if (config & eCONF_ES_IST) {
         aucTime[ucCurrentItem++] = eTEXT_ES_IST;
@@ -487,47 +476,47 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
             } else {
                 aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucHour;
             }
-            aucTime[ucCurrentItem] = eTEXT_UHR;
+            aucTime[ucCurrentItem++] = eTEXT_UHR;
         } else if (ucMinute < 10) {
             aucTime[ucCurrentItem++] = eTEXT_FUENF;
             aucTime[ucCurrentItem++] = eTEXT_NACH;
-            aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucHour;
+            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucHour;
         } else if (ucMinute < 15) {
             aucTime[ucCurrentItem++] = eTEXT_ZEHN;
             aucTime[ucCurrentItem++] = eTEXT_NACH;
-            aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucHour;
+            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucHour;
         } else if (ucMinute < 20) {
             aucTime[ucCurrentItem++] = eTEXT_VIERTEL;
             if (config & eCONF_VIERTEL_VOR_NACH) {
                 aucTime[ucCurrentItem++] = eTEXT_NACH;
-                aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucHour;
+                aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucHour;
             } else {
-                aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
+                aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
             }
         } else if (ucMinute < 25) {
             if (config & eCONF_ZWANZIG_VOR_NACH) {
                 aucTime[ucCurrentItem++] = eTEXT_ZWANZIG;
                 aucTime[ucCurrentItem++] = eTEXT_NACH;
-                aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucHour;
+                aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucHour;
             } else {
                 aucTime[ucCurrentItem++] = eTEXT_ZEHN;
                 aucTime[ucCurrentItem++] = eTEXT_VOR;
                 aucTime[ucCurrentItem++] = eTEXT_HALB;
-                aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
+                aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
             }
         } else if (ucMinute < 30) {
             aucTime[ucCurrentItem++] = eTEXT_FUENF;
             aucTime[ucCurrentItem++] = eTEXT_VOR;
             aucTime[ucCurrentItem++] = eTEXT_HALB;
-            aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
         } else if (ucMinute < 35) {
             aucTime[ucCurrentItem++] = eTEXT_HALB;
-            aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
         } else if (ucMinute < 40) {
             aucTime[ucCurrentItem++] = eTEXT_FUENF;
             aucTime[ucCurrentItem++] = eTEXT_NACH;
             aucTime[ucCurrentItem++] = eTEXT_HALB;
-            aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
         } else if (ucMinute < 45) {
             if (config & eCONF_ZWANZIG_VOR_NACH) {
                 aucTime[ucCurrentItem++] = eTEXT_ZWANZIG;
@@ -537,7 +526,7 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
                 aucTime[ucCurrentItem++] = eTEXT_NACH;
                 aucTime[ucCurrentItem++] = eTEXT_HALB;
             }
-            aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
         } else if (ucMinute < 50) {
             if (config & eCONF_VIERTEL_VOR_NACH) {
                 aucTime[ucCurrentItem++] = eTEXT_VIERTEL;
@@ -545,38 +534,33 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
             } else {
                 aucTime[ucCurrentItem++] = eTEXT_DREIVIERTEL;
             }
-            aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
         } else if (ucMinute < 55) {
             aucTime[ucCurrentItem++] = eTEXT_ZEHN;
             aucTime[ucCurrentItem++] = eTEXT_VOR;
-            aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
         } else if (ucMinute < 60) {
             aucTime[ucCurrentItem++] = eTEXT_FUENF;
             aucTime[ucCurrentItem++] = eTEXT_VOR;
-            aucTime[ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
         }
     }
 
     //the last row is following later for minutes 1-4 (border LEDs)
-    ucCurrentItem = 0;
 
-    for (ucCurrentItem = 0; ucCurrentItem < MAX_ITEMS; ucCurrentItem++) {
-        if (aucTime[ucCurrentItem] != 0xFF) {
-            U8 ucCol, ucRow;
+    for (ucI = 0; ucI < ucCurrentItem; ucI++) {
+        U8 ucCol, ucRow;
 
-            ucRow = _astPos[aucTime[ucCurrentItem]].u8Row;
+        ucRow = _astPos[aucTime[ucI]].u8Row;
 
-            for (ucCol = 0; ucCol < NUM_COLS; ucCol++) {
-                CLRWDT();
-
-                _vOnOffCol(ucCol, (_astPos[aucTime[ucCurrentItem]].u16Cols & _au16ColBit[ucCol]) ? 1 : 0);
-            }
-
-            _vOnOffRow(ucRow, 1);
-            DELAY_US(_aRowOnTime[_brightness]);
-            _vOnOffRow(ucRow, 0);
-            DELAY_US(_aRowOffTime[_brightness]);
+        for (ucCol = 0; ucCol < NUM_COLS; ucCol++) {
+            _vOnOffCol(ucCol, (_astPos[aucTime[ucI]].u16Cols & _au16ColBit[ucCol]) ? 1 : 0);
         }
+
+        _vOnOffRow(ucRow, 1);
+        DELAY_US(_aRowOnTime[_brightness]);
+        _vOnOffRow(ucRow, 0);
+        DELAY_US(ROW_TIME - _aRowOnTime[_brightness]);
     }
 
     _vOnOffCol(0xFF, 0);
@@ -584,24 +568,24 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
     //write 12th row here (minutes)
     switch (ucMinute % 5) {
         case 4:
-            _vOnOffCol(1, 1);
-            //fall through
-
-        case 3:
             _vOnOffCol(NUM_COLS - 1, 1);
             //fall through
 
-        case 2:
+        case 3:
             _vOnOffCol(NUM_COLS - 2, 1);
             //fall through
 
-        case 1:
+        case 2:
             _vOnOffCol(0, 1);
+            //fall through
+
+        case 1:
+            _vOnOffCol(1, 1);
 
             _vOnOffRow(NUM_ROWS - 1, 1);
             DELAY_US(_aRowOnTime[_brightness]);
             _vOnOffRow(NUM_ROWS - 1, 0);
-            DELAY_US(_aRowOffTime[_brightness]);
+            DELAY_US(ROW_TIME - _aRowOnTime[_brightness]);
 
             break;
 
@@ -690,7 +674,7 @@ void vWritePattern() {
         _vOnOffRow(u8Row, 1);
         DELAY_US(_aRowOnTime[_brightness]);
         _vOnOffRow(u8Row, 0);
-        DELAY_US(_aRowOffTime[_brightness]);
+        DELAY_US(ROW_TIME - _aRowOnTime[_brightness]);
     }
 
     _vOnOffCol(0xFF, 0);

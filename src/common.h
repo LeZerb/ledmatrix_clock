@@ -22,32 +22,8 @@ typedef bit BOOL;
 #define SECS_IN_MIN                        (60)
 #define SECS_IN_5_MIN         (5 * SECS_IN_MIN)
 
-#define DELAY_MS(x)      \
-{                        \
-    U16 delay = (x);     \
-    while (delay--) {    \
-        CLRWDT();        \
-        __delay_ms((1)); \
-    }                    \
-    CLRWDT();            \
-}
-
-#define USEC_STEPS (100)
-#define DELAY_US(x)             \
-{                               \
-    U16 usec = (x) % 1000;      \
-    DELAY_MS((x) / 1000);       \
-    while(usec)                 \
-    {                           \
-        __delay_us(USEC_STEPS); \
-        if (usec <= USEC_STEPS) \
-        {                       \
-            break;              \
-        }                       \
-        usec -= USEC_STEPS;     \
-    }                           \
-    CLRWDT();                   \
-}
+#define DELAY_MS(x) _delaywdt(((x) * _XTAL_FREQ) / 1000)
+#define DELAY_US(x) _delaywdt(((x) * _XTAL_FREQ) / 1000000)
 
 #define BIT_SET_8(var, bitno) ((var) |=   (U8)1 << (bitno))
 #define BIT_CLR_8(var, bitno) ((var) &= ~((U8)1 << (bitno)))
