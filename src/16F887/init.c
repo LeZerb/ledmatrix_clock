@@ -52,7 +52,7 @@ void vInit() {
     //globally enable interrupts
     GIE = 1;
 
-    //enable timer 0 wrap arount interrupt
+    //enable timer 0 wrap around interrupt
     T0IE = 1;
 
     //disable analog inputs
@@ -115,7 +115,7 @@ void vInit() {
     OUTPUT23 = 0;
     OUTPUT24 = 0;
 
-    //enable interrupt on port RB2 (DCF), RB3 and RB4 (switches) 
+    //enable interrupt on port RB2 (DCF), RB3 and RB4 (switches)
     IOCB2 = 1;
     IOCB3 = 1;
     IOCB4 = 1;

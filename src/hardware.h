@@ -1,40 +1,23 @@
 #ifndef _HARDWARE_H_
 #define _HARDWARE_H_
 
+#include "xc.h"
+
+#if __DEVICENAME__ ==__16F887__
+#error
+#elif __DEVICENAME__ == __18F45K22__
+#error _18F45K22
+#error
+#include "mcc.h"
+#else
+#error Unsupported device
+#endif
+
 #define _XTAL_FREQ  (19660800ul)
 
 //WRAPS_A_SEC defines how many timer overflows are in one minute
 //this is dependant on clock frequency and timer prescaler
 #define WRAPS_A_SEC       (75)
-
-//which PINS are to be used as output
-//columns
-#define OUTPUT0  TRISA0
-#define OUTPUT1  TRISA1
-#define OUTPUT2  TRISA2
-#define OUTPUT3  TRISA3
-#define OUTPUT4  TRISA4
-#define OUTPUT5  TRISA5
-#define OUTPUT6  TRISE0
-#define OUTPUT7  TRISE1
-#define OUTPUT8  TRISE2
-#define OUTPUT9  TRISC0
-#define OUTPUT10 TRISC1
-//rows
-#define OUTPUT11 TRISB1
-#define OUTPUT12 TRISB0
-#define OUTPUT13 TRISD7
-#define OUTPUT14 TRISD6
-#define OUTPUT15 TRISD5
-#define OUTPUT16 TRISD4
-#define OUTPUT17 TRISC7
-#define OUTPUT18 TRISC6
-#define OUTPUT19 TRISC5
-#define OUTPUT20 TRISC4
-#define OUTPUT21 TRISD3
-#define OUTPUT23 TRISD2
-//DCF power
-#define OUTPUT24 TRISC3
 
 //LED matrix
 #define NUM_COLS (11)
