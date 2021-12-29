@@ -3,11 +3,9 @@
 
 #include "xc.h"
 
-#if __DEVICENAME__ ==__16F887__
-#error
-#elif __DEVICENAME__ == __18F45K22__
+#ifdef __16F887__
+#elif defined __18F45K22__
 #error _18F45K22
-#error
 #include "mcc.h"
 #else
 #error Unsupported device
@@ -17,7 +15,7 @@
 
 //WRAPS_A_SEC defines how many timer overflows are in one minute
 //this is dependant on clock frequency and timer prescaler
-#define WRAPS_A_SEC       (75)
+#define WRAPS_A_SEC       (75u)
 
 //LED matrix
 #define NUM_COLS (11)

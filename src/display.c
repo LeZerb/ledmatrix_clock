@@ -5,7 +5,7 @@
 
 //defines
 #define ROW_TIME_RES (125)
-#define ROW_TIME (8 * ROW_TIME_RES) // 1s / 60fps / 12rows = 1389us
+#define ROW_TIME (8 * ROW_TIME_RES) // 1s / 60fps / 12rows = 1389us -> use 1000us
 #define MAX_BRIGHTNESS (eCONF_BRIGHTNESS >> eCONF_BRIGHTNESS_SHIFT)
 
 #define ROW_ON_TIME_0 (1 * ROW_TIME_RES)
@@ -28,190 +28,179 @@ typedef struct {
 static U16 _au16Pattern[PATTERN_SIZE];
 static U8 _brightness = MAX_BRIGHTNESS;
 
-static const U16 _aRowOnTime[MAX_BRIGHTNESS + 1] = {
-    ROW_ON_TIME_0,
-    ROW_ON_TIME_1,
-    ROW_ON_TIME_2,
-    ROW_ON_TIME_3,
-    ROW_ON_TIME_4,
-    ROW_ON_TIME_5,
-    ROW_ON_TIME_6,
-    ROW_ON_TIME_7
-};
-
 static const U16 _au16ColBit[16] = {
-    0x8000,
-    0x4000,
-    0x2000,
-    0x1000,
-    0x0800,
-    0x0400,
-    0x0200,
-    0x0100,
-    0x0080,
-    0x0040,
-    0x0020,
-    0x0010,
-    0x0008,
-    0x0004,
-    0x0002,
-    0x0001
+    0x8000u,
+    0x4000u,
+    0x2000u,
+    0x1000u,
+    0x0800u,
+    0x0400u,
+    0x0200u,
+    0x0100u,
+    0x0080u,
+    0x0040u,
+    0x0020u,
+    0x0010u,
+    0x0008u,
+    0x0004u,
+    0x0002u,
+    0x0001u
 };
 
 static const U16 _au16ColClrBit[16] = {
-    ~0x8000,
-    ~0x4000,
-    ~0x2000,
-    ~0x1000,
-    ~0x0800,
-    ~0x0400,
-    ~0x0200,
-    ~0x0100,
-    ~0x0080,
-    ~0x0040,
-    ~0x0020,
-    ~0x0010,
-    ~0x0008,
-    ~0x0004,
-    ~0x0002,
-    ~0x0001
+    ~0x8000u,
+    ~0x4000u,
+    ~0x2000u,
+    ~0x1000u,
+    ~0x0800u,
+    ~0x0400u,
+    ~0x0200u,
+    ~0x0100u,
+    ~0x0080u,
+    ~0x0040u,
+    ~0x0020u,
+    ~0x0010u,
+    ~0x0008u,
+    ~0x0004u,
+    ~0x0002u,
+    ~0x0001u
 };
 
 static const TS_POSITION _astPos[eTEXT_NUM_ENTRIES] = {
     //eES_IST
     {
-        {0},
-        {0b1101110000000000}
+        0,
+        0b1101110000000000
     },
     //eNULL_H
     {
-        {0},
-        {0b0000000111100000}
+        0,
+        0b0000000111100000
     },
     //eNULL_UHR (only UHR)
     {
-        {1},
-        {0b1110000000000000}
+        1,
+        0b1110000000000000
     },
     //eFUENF
     {
-        {2},
-        {0b0111100000000000}
+        2,
+        0b0111100000000000
     },
     //eZEHN
     {
-        {2},
-        {0b0000011110000000}
+        2,
+        0b0000011110000000
     },
     //eFÜNFZEHN
     {
-        {2},
-        {0b0111111110000000}
+        2,
+        0b0111111110000000
     },
     //eVIERTEL
     {
-        {3},
-        {0b0000111111100000}
+        3,
+        0b0000111111100000
     },
     //eZWANZIG
     {
-        {1},
-        {0b0000111111100000}
+        1,
+        0b0000111111100000
     },
     //eDREIVIERTEL
     {
-        {3},
-        {0b1111111111100000}
+        3,
+        0b1111111111100000
     },
     //eVOR
     {
-        {4},
-        {0b0111000000000000}
+        4,
+        0b0111000000000000
     },
     //eNACH
     {
-        {4},
-        {0b0000111100000000}
+        4,
+        0b0000111100000000
     },
     //eHALB
     {
-        {5},
-        {0b1111000000000000}
+        5,
+        0b1111000000000000
     },
     //eMITTERNACHT
     {
-        {6},
-        {0b1111111111100000}
+        6,
+        0b1111111111100000
     },
     //eZWOELF_H
     {
-        {9},
-        {0b0000001111100000}
+        9,
+        0b0000001111100000
     },
     //eEINS_H
     {
-        {5},
-        {0b0000000111100000}
+        5,
+        0b0000000111100000
     },
     //eZWEI_H
     {
-        {5},
-        {0b0000011110000000}
+        5,
+        0b0000011110000000
     },
     //eDREI_H
     {
-        {7},
-        {0b0111100000000000}
+        7,
+        0b0111100000000000
     },
     //eVIER_H
     {
-        {8},
-        {0b1111000000000000}
+        8,
+        0b1111000000000000
     },
     //eFUENF_H
     {
-        {9},
-        {0b0011110000000000}
+        9,
+        0b0011110000000000
     },
     //eSECHS_H
     {
-        {7},
-        {0b0000011111000000}
+        7,
+        0b0000011111000000
     },
     //eSIEBEN_H
     {
-        {8},
-        {0b0000111111000000}
+        8,
+        0b0000111111000000
     },
     //eACHT_H
     {
-        {6},
-        {0b0000000111100000}
+        6,
+        0b0000000111100000
     },
     //eNEUN_H
     {
-        {10},
-        {0b0001111000000000}
+        10,
+        0b0001111000000000
     },
     //eZEHN_H
     {
-        {10},
-        {0b1111000000000000}
+        10,
+        0b1111000000000000
     },
     //eELF_H
     {
-        {9},
-        {0b1110000000000000}
+        9,
+        0b1110000000000000
     },
     //eEIN_H
     {
-        {5},
-        {0b0000000111000000}
+        5,
+        0b0000000111000000
     },
     //eUHR
     {
-        {10},
-        {0b0000000011100000}
+        10,
+        0b0000000011100000
     }
 };
 
@@ -222,107 +211,111 @@ static const U16 _au16Nums[10] = {
     //* *
     //* *
     //***
-    {0b1111011011011110},
+    0b1111011011011110,
     //  *
     //  *
     //  *
     //  *
     //  *
-    {0b0010010010010010},
+    0b0010010010010010,
     //***
     //  *
     //***
     //*
     //***
-    {0b1110011111001110},
+    0b1110011111001110,
     //***
     //  *
     //***
     //  *
     //***
-    {0b1110011110011110},
+    0b1110011110011110,
     //* *
     //* *
     //***
     //  *
     //  *
-    {0b1011011110010010},
+    0b1011011110010010,
     //***
     //*
     //***
     //  *
     //***
-    {0b1111001110011110},
+    0b1111001110011110,
     //***
     //*
     //***
     //* *
     //***
-    {0b1111001111011110},
+    0b1111001111011110,
     //***
     //  *
     //  *
     //  *
     //  *
-    {0b1110010010010010},
+    0b1110010010010010,
     //***
     //* *
     //***
     //* *
     //***
-    {0b1111011111011110},
+    0b1111011111011110,
     //***
     //* *
     //***
     //  *
     //***
-    {0b1111011110011110}
+    0b1111011110011110
 };
 
-static void _vOnOffCol(unsigned char ucCol, unsigned char ucOn) {
+static void _vOnOffCol(unsigned char ucCol, U8 ucOn) {
+    static BOOL colOn = FALSE;
+
+    colOn = ucOn != FALSE;
+
     switch (ucCol) {
         case 0:
-            COL0 = ucOn;
+            COL0 = colOn;
             break;
 
         case 1:
-            COL1 = ucOn;
+            COL1 = colOn;
             break;
 
         case 2:
-            COL2 = ucOn;
+            COL2 = colOn;
             break;
 
         case 3:
-            COL3 = ucOn;
+            COL3 = colOn;
             break;
 
         case 4:
-            COL4 = ucOn;
+            COL4 = colOn;
             break;
 
         case 5:
-            COL5 = ucOn;
+            COL5 = colOn;
             break;
 
         case 6:
-            COL6 = ucOn;
+            COL6 = colOn;
             break;
 
         case 7:
-            COL7 = ucOn;
+            COL7 = colOn;
             break;
 
         case 8:
-            COL8 = ucOn;
+            COL8 = colOn;
             break;
 
         case 9:
-            COL9 = ucOn;
+            COL9 = colOn;
             break;
 
         case 10:
-            COL10 = ucOn;
+            COL10 = colOn;
             break;
 
         case 0xFF: // fall through
@@ -342,56 +335,60 @@ static void _vOnOffCol(unsigned char ucCol, unsigned char ucOn) {
     }
 }
 
-static void _vOnOffRow(unsigned char ucRow, unsigned char ucOn) {
+static void _vOnOffRow(unsigned char ucRow, U16 ucOn) {
+    static BOOL rowOn = FALSE;
+
+    rowOn = ucOn != FALSE;
+
     //we have already disabled everything so we only need
     //to take action here if a row is to be enabled
     switch (ucRow) {
         case 0:
-            ROW0 = ucOn;
+            ROW0 = rowOn;
             break;
 
         case 1:
-            ROW1 = ucOn;
+            ROW1 = rowOn;
             break;
 
         case 2:
-            ROW2 = ucOn;
+            ROW2 = rowOn;
             break;
 
         case 3:
-            ROW3 = ucOn;
+            ROW3 = rowOn;
             break;
 
         case 4:
-            ROW4 = ucOn;
+            ROW4 = rowOn;
             break;
 
         case 5:
-            ROW5 = ucOn;
+            ROW5 = rowOn;
             break;
 
         case 6:
-            ROW6 = ucOn;
+            ROW6 = rowOn;
             break;
 
         case 7:
-            ROW7 = ucOn;
+            ROW7 = rowOn;
             break;
 
         case 8:
-            ROW8 = ucOn;
+            ROW8 = rowOn;
             break;
 
         case 9:
-            ROW9 = ucOn;
+            ROW9 = rowOn;
             break;
 
         case 10:
-            ROW10 = ucOn;
+            ROW10 = rowOn;
             break;
 
         case 11:
-            ROW11 = ucOn;
+            ROW11 = rowOn;
             break;
 
         case 0xFF: // fall through
@@ -410,6 +407,49 @@ static void _vOnOffRow(unsigned char ucRow, unsigned char ucOn) {
             ROW11 = 0;
             break;
     }
+}
+
+#define ROW_ON_CASE(brightness)              \
+    case (brightness):                       \
+        DELAY_US(ROW_ON_TIME_##brightness); \
+        break;
+
+#define ROW_OFF_CASE(brightness)                        \
+    case (brightness):                                  \
+        DELAY_US(ROW_TIME - ROW_ON_TIME_##brightness); \
+        break;
+
+void vDelayRowOnByBrightness()
+{
+    switch (_brightness)
+    {
+        default: // fall-through
+        ROW_ON_CASE(0);
+        ROW_ON_CASE(1);
+        ROW_ON_CASE(2);
+        ROW_ON_CASE(3);
+        ROW_ON_CASE(4);
+        ROW_ON_CASE(5);
+        ROW_ON_CASE(6);
+        ROW_ON_CASE(7);
+    }
+}
+
+void vDelayRowOffByBrightness()
+{
+    switch (_brightness)
+    {
+        default: // fall-through
+        ROW_OFF_CASE(0);
+        ROW_OFF_CASE(1);
+        ROW_OFF_CASE(2);
+        ROW_OFF_CASE(3);
+        ROW_OFF_CASE(4);
+        ROW_OFF_CASE(5);
+        ROW_OFF_CASE(6);
+        ROW_OFF_CASE(7);
+    }
+
 }
 
 void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
@@ -547,7 +587,6 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
     }
 
     //the last row is following later for minutes 1-4 (border LEDs)
-
     for (ucI = 0; ucI < ucCurrentItem; ucI++) {
         U8 ucCol, ucRow;
 
@@ -558,34 +597,34 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
         }
 
         _vOnOffRow(ucRow, 1);
-        DELAY_US(_aRowOnTime[_brightness]);
+        vDelayRowOnByBrightness();
         _vOnOffRow(ucRow, 0);
-        DELAY_US(ROW_TIME - _aRowOnTime[_brightness]);
+        vDelayRowOffByBrightness();
     }
 
-    _vOnOffCol(0xFF, 0);
+    _vOnOffCol(0xFF, 0u);
 
     //write 12th row here (minutes)
     switch (ucMinute % 5) {
         case 4:
-            _vOnOffCol(NUM_COLS - 1, 1);
+            _vOnOffCol(NUM_COLS - 1, 1u);
             //fall through
 
         case 3:
-            _vOnOffCol(NUM_COLS - 2, 1);
+            _vOnOffCol(NUM_COLS - 2, 1u);
             //fall through
 
         case 2:
-            _vOnOffCol(0, 1);
+            _vOnOffCol(0, 1u);
             //fall through
 
         case 1:
-            _vOnOffCol(1, 1);
+            _vOnOffCol(1, 1u);
 
-            _vOnOffRow(NUM_ROWS - 1, 1);
-            DELAY_US(_aRowOnTime[_brightness]);
-            _vOnOffRow(NUM_ROWS - 1, 0);
-            DELAY_US(ROW_TIME - _aRowOnTime[_brightness]);
+            _vOnOffRow(NUM_ROWS - 1, 1u);
+            vDelayRowOnByBrightness();
+            _vOnOffRow(NUM_ROWS - 1, 0u);
+            vDelayRowOffByBrightness();
 
             break;
 
@@ -594,7 +633,7 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
     }
 
     //disable all columns
-    _vOnOffCol(0xFF, 0);
+    _vOnOffCol(0xFF, 0u);
 }
 
 void vAddTextToPattern(TE_CLOCK_TEXT eText) {
@@ -624,12 +663,12 @@ void vTestDisplay(void) {
         _vOnOffRow(u8Row, 1);
         for (u8Col = 0; u8Col < NUM_COLS; u8Col++) {
             //switch current column on
-            _vOnOffCol(u8Col, 1);
+            _vOnOffCol(u8Col, 1u);
             DELAY_MS(50);
             //switch current column off
-            _vOnOffCol(u8Col, 0);
+            _vOnOffCol(u8Col, 0u);
         }
-        _vOnOffRow(u8Row, 0);
+        _vOnOffRow(u8Row, 0u);
     }
 }
 
@@ -668,22 +707,24 @@ void vWritePattern() {
         }
 
         for (u8Col = 0; u8Col < NUM_COLS; u8Col++) {
-            _vOnOffCol(u8Col, (_au16Pattern[u8Row] & _au16ColBit[u8Col]) ? 1 : 0);
+            _vOnOffCol(u8Col, (_au16Pattern[u8Row] & _au16ColBit[u8Col]) ? 1u : 0u);
         }
 
         _vOnOffRow(u8Row, 1);
-        DELAY_US(_aRowOnTime[_brightness]);
+        vDelayRowOnByBrightness();
         _vOnOffRow(u8Row, 0);
-        DELAY_US(ROW_TIME - _aRowOnTime[_brightness]);
+        vDelayRowOffByBrightness();
     }
 
-    _vOnOffCol(0xFF, 0);
+    _vOnOffCol(0xFF, 0u);
 }
 
-void vSetBrightness(U8 brightness) {
+void vSetBrightness(const U8 brightness) {
     if (brightness > MAX_BRIGHTNESS) {
-        brightness = MAX_BRIGHTNESS;
+        _brightness = MAX_BRIGHTNESS;
     }
-
-    _brightness = brightness;
+    else
+    {
+        _brightness = brightness;
+    }
 }

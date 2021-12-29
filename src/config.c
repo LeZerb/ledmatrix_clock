@@ -5,24 +5,19 @@
 #define DEFAULT_CONFIG (eCONF_BRIGHTNESS | eCONF_ES_IST)
 
 static BOOL _wasLoaded = FALSE;
-static U8 _config = 0;
+static U8 _config = DEFAULT_CONFIG;
 
 void configLoad() {
     U8 valid = eeprom_read(eEEP_CONFIG_VALID_OFFSET);
-    _config = eeprom_read(eEEP_CONFIG_OFFSET);
 
-    if (valid != eCONF_VALID) {
-        _config = DEFAULT_CONFIG;
+    if (valid == eCONF_VALID) {
+        _config = eeprom_read(eEEP_CONFIG_OFFSET);
     }
 
     _wasLoaded = TRUE;
 }
 
-void configSave(TE_CONFIG eConfig) {
-    U8 config;
-
-    config = eConfig;
-
+void configSave(U8 config) {
     if (!_wasLoaded) {
         configLoad();
     }
@@ -37,7 +32,7 @@ void configSave(TE_CONFIG eConfig) {
     _config = eeprom_read(eEEP_CONFIG_OFFSET);
 }
 
-inline TE_CONFIG configGet() {
+inline U8 configGet() {
     if (!_wasLoaded) {
         configLoad();
     }

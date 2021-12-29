@@ -12,6 +12,25 @@
             <asminc-extensions/>
             <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects/>
+            <sourceRootList>
+                <sourceRootElem/>
+                <sourceRootElem>../src</sourceRootElem>
+                <sourceRootElem>../src/16F887</sourceRootElem>
+                <sourceRootElem>../src/18F45K22</sourceRootElem>
+            </sourceRootList>
+            <confList>
+                <confElem>
+                    <name>16F887</name>
+                    <type>2</type>
+                </confElem>
+                <confElem>
+                    <name>18F45K22</name>
+                    <type>2</type>
+                </confElem>
+            </confList>
+            <formatting>
+                <project-formatting-style>false</project-formatting-style>
+            </formatting>
         </data>
     </configuration>
 </project>

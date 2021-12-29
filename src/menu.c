@@ -139,8 +139,8 @@ static TS_TIME _time = {0, 0, 0};
 static TS_DATE _oldDate = {1, 1, 16};
 static TS_DATE _date = {1, 1, 16};
 static U8 _brightness = eCONF_BRIGHTNESS >> eCONF_BRIGHTNESS_SHIFT;
-static TE_CONFIG _oldConfig = 0;
-static TE_CONFIG _config = 0;
+static U8 _oldConfig = 0;
+static U8 _config = 0;
 static BOOL _timeInvalidate = FALSE;
 
 //implementation
@@ -389,6 +389,8 @@ static void enterState(TE_MENU_STATE state) {
             //add dot in front of year
             vSetInPattern(0, 8, 1);
             break;
+        default:
+            break;
     }
 }
 
@@ -424,6 +426,8 @@ static void leaveState(TE_MENU_STATE state, TE_MENU_STATE newState) {
                 if (_timeInvalidate) {
                     timeInvalidate();
                 }
+                break;
+            default:
                 break;
         }
     }
@@ -539,6 +543,8 @@ void eHandleButton(TE_BUTTONS eButton) {
                     _eCurMenuState = eMENU_MAIN_SNAKE;
                     enterState(_eCurMenuState);
                 }
+                break;
+            default:
                 break;
         }
     }

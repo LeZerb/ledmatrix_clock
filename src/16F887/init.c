@@ -1,4 +1,33 @@
-#include "common.h"
+#include "../common.h"
+
+//which PINS are to be used as output
+//columns
+#define OUTPUT0  TRISA0
+#define OUTPUT1  TRISA1
+#define OUTPUT2  TRISA2
+#define OUTPUT3  TRISA3
+#define OUTPUT4  TRISA4
+#define OUTPUT5  TRISA5
+#define OUTPUT6  TRISE0
+#define OUTPUT7  TRISE1
+#define OUTPUT8  TRISE2
+#define OUTPUT9  TRISC0
+#define OUTPUT10 TRISC1
+//rows
+#define OUTPUT11 TRISB1
+#define OUTPUT12 TRISB0
+#define OUTPUT13 TRISD7
+#define OUTPUT14 TRISD6
+#define OUTPUT15 TRISD5
+#define OUTPUT16 TRISD4
+#define OUTPUT17 TRISC7
+#define OUTPUT18 TRISC6
+#define OUTPUT19 TRISC5
+#define OUTPUT20 TRISC4
+#define OUTPUT21 TRISD3
+#define OUTPUT23 TRISD2
+//DCF power
+#define OUTPUT24 TRISC3
 
 /*
  ** in-cicuit debugging disabled
@@ -13,13 +42,24 @@
  ** watchdog timer disabled - will be enabled in software
  ** use internal clock - CLKIN/CLKOUT are I/O
  */
-__CONFIG(DEBUG_OFF & LVP_OFF & FCMEN_ON & IESO_OFF & BOREN_ON & CPD_OFF & CP_OFF & MCLRE_OFF & PWRTE_ON & WDTE_OFF & FOSC_HS);
+#pragma config DEBUG=OFF
+#pragma config LVP=OFF
+#pragma config FCMEN=ON
+#pragma config IESO=OFF
+#pragma config BOREN=ON
+#pragma config CPD=OFF
+#pragma config CP=OFF
+#pragma config MCLRE=OFF
+#pragma config PWRTE=ON
+#pragma config WDTE=OFF
+#pragma config FOSC=HS
 
 /*
  ** flash write protection is not enabled
  ** brown-out reset on 2.1V
  */
-__CONFIG(BOR4V_BOR21V);
+#pragma config WRT=OFF
+#pragma config BOR4V=BOR21V
 
 void vInit() {
     //enable watchdog timer with prescaler 1:65536

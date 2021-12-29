@@ -73,7 +73,7 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, TS_TIME *pstTime, TS_DATE *pstDate
     //we need room for two sets of DCF data
     static U8 _au8DCFData[2 * ((59 / 8) + 1)] = {0};
     static U8 _u8DCFBitsRecvd = 0;
-    static bit _bSyncDone = 0;
+    static BOOL _bSyncDone = FALSE;
 
 #if (DCF_INVERTED)
     if (u8Edge)
@@ -84,11 +84,11 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, TS_TIME *pstTime, TS_DATE *pstDate
         //look for a sync event
         if (u16After > 1750 &&
                 u16After < 1950) {
-            static TS_TIME _stFirstTime = 0;
+            static TS_TIME _stFirstTime = {0, 0, 0};
             static TS_DATE _stFirstDate = {1, 1, 16};
 
             //a sync event has occurred
-            _bSyncDone = 1;
+            _bSyncDone = TRUE;
 
             if (_u8DCFBitsRecvd == 59) {
                 //we can now set the time now
@@ -128,7 +128,7 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, TS_TIME *pstTime, TS_DATE *pstDate
                 u16After > 950) {
             //this is not an edge of a data bit -> error
             _u8DCFBitsRecvd = 0;
-            _bSyncDone = 0;
+            _bSyncDone = FALSE;
             eRc = eDCF_ERROR;
         }
     } else {
@@ -140,7 +140,7 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, TS_TIME *pstTime, TS_DATE *pstDate
             //we already got 59 bytes but have not seen a sync
             //or we already have all data bytes but another one is upcoming
             _u8DCFBitsRecvd = 0;
-            _bSyncDone = 0;
+            _bSyncDone = FALSE;
         } else if (_u8DCFBitsRecvd == 59) {
             _u8CurrentByte = (59 / 8) + 1;
             _u8CurrentBit = 7;
@@ -182,7 +182,7 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, TS_TIME *pstTime, TS_DATE *pstDate
             }
         } else {
             _u8DCFBitsRecvd = 0;
-            _bSyncDone = 0;
+            _bSyncDone = FALSE;
             eRc = eDCF_ERROR;
         }
     }

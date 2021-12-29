@@ -20,15 +20,15 @@ typedef enum {
 
 //variables
 static volatile U8 _u8ClkInt = 0;
-static volatile bit _bDCF = 0,
-        _bSWMenu = 0,
-        _bSWSet = 0;
+static volatile BOOL _bDCF = FALSE,
+        _bSWMenu = FALSE,
+        _bSWSet = FALSE;
 
 static TS_TIME _stTime = {0, 0, 0}; //hold the time of the day
 static TS_DATE _stDate = {1, 1, 16}; //hold the current date
-static BOOL _bValidTime = 0; //is the time that is currently running valid
+static BOOL _bValidTime = FALSE; //is the time that is currently running valid
 
-static void interrupt _vInterrupt(void) {
+static void __interrupt(high_priority) _vInterrupt(void) {
     if (T0IF) {
         //we have an interrupt on T0
         T0IF = 0;
@@ -77,11 +77,11 @@ void dateSet(TS_DATE *date) {
     _stDate.u8Year = date->u8Year;
 }
 
-static U8 _startMs[eMS_COUNT_NUM] = 0;
+static U8 _startMs[eMS_COUNT_NUM] = {0};
 
 U16 msSinceLastStart(TE_MS_COUNT eMsCount) {
     // There is one timer interrupt each 1000 / WRAPS_A_SEC ms
-    return (abs((S8) _u8ClkInt - (S8) _startMs[eMsCount]) * (U32) 1000) / WRAPS_A_SEC;
+    return (U16)((((U32)abs((S8) _u8ClkInt - (S8) _startMs[eMsCount])) * 1000ul) / WRAPS_A_SEC);
 }
 
 void msStart(TE_MS_COUNT eMsCount) {
@@ -89,19 +89,19 @@ void msStart(TE_MS_COUNT eMsCount) {
 }
 
 void main(void) {
-    static bit _bLastSWMenu = 0, _bLastSWSet = 0;
+    static BOOL _bLastSWMenu = FALSE, _bLastSWSet = FALSE;
     static BOOL _pendingMenu = FALSE, _pendingSet = FALSE;
 
     vInit();
 
-    _bLastSWMenu = 1;
-    _bLastSWSet = 1;
+    _bLastSWMenu = TRUE;
+    _pendingMenu = TRUE;
 
     vSetBrightness((configGet() & eCONF_BRIGHTNESS) >> eCONF_BRIGHTNESS_SHIFT);
 
     while (1) {
-        static BOOL _bNightlyUpdate = 0, //time is invalidated at 4 o'clock - did we have a valid time
-                _bLastDCF = 0; //last value which was input on DCF pin
+        static BOOL _bNightlyUpdate = FALSE, //time is invalidated at 4 o'clock - did we have a valid time
+                _bLastDCF = FALSE; //last value which was input on DCF pin
         static TE_DISPLAY_STATE _eDisplayState = eDISP_TIME; //what is to be displayed on the display
         static U8 _u8DCFSecs = 0; //how many second wraps since last DCF in state change
         U8 u8CurClockInt = _u8ClkInt, //what is the current clock interrupt count
@@ -138,8 +138,8 @@ void main(void) {
                     //we need to invalidate the time here
                     //since showing the current time does not allow correct DCF receiving
                     //interruptions would disturb the DCF input signals
-                    _bNightlyUpdate = 1;
-                    _bValidTime = 0;
+                    _bNightlyUpdate = TRUE;
+                    _bValidTime = FALSE;
                 }
 
                 if (_stTime.u8Minute >= 60) {
@@ -200,15 +200,15 @@ void main(void) {
                 eDCFRc = eDCFAddBit(_bLastDCF, (U16) u32TimeSince, &_stTime, &_stDate);
 
                 if (eDCFRc == eDCF_TIME_SET) {
-                    _bValidTime = 1;
+                    _bValidTime = TRUE;
 
                     //disable the DCF receiver
                     DCF_POWER = 0;
                 } else if (_bNightlyUpdate &&
                         _stTime.u8Hour >= 5) {
                     //we have tried to update the time for an hour now -> give up
-                    _bNightlyUpdate = 0;
-                    _bValidTime = 1;
+                    _bNightlyUpdate = FALSE;
+                    _bValidTime = TRUE;
                     DCF_POWER = 0;
                 }
             }

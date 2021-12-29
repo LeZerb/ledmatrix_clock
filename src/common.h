@@ -15,15 +15,15 @@ typedef uint8_t U8;
 typedef uint16_t U16;
 typedef uint32_t U32;
 
-typedef bit BOOL;
+typedef __bit BOOL;
 #define FALSE (0)
 #define TRUE  (1)
 
 #define SECS_IN_MIN                        (60)
 #define SECS_IN_5_MIN         (5 * SECS_IN_MIN)
 
-#define DELAY_MS(x) __delay_ms((x))
-#define DELAY_US(x) __delay_us((x))
+#define DELAY_US(x) _delaywdt((unsigned long)((x)*(_XTAL_FREQ/4000000.0)))
+#define DELAY_MS(x) _delaywdt((unsigned long)((x)*(_XTAL_FREQ/4000.0)))
 
 #define BIT_SET_8(var, bitno) ((var) |=   (U8)1 << (bitno))
 #define BIT_CLR_8(var, bitno) ((var) &= ~((U8)1 << (bitno)))

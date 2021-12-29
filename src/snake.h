@@ -15,10 +15,8 @@
 extern "C" {
 #endif
 
-
     BOOL snakeRun(TE_BUTTONS button);
     void snakeInit();
-
 
 #ifdef	__cplusplus
 }
