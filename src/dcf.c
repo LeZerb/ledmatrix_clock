@@ -157,27 +157,27 @@ TE_DCF_RC eDCFAddBit(U8 u8Edge, U16 u16After, TS_TIME *pstTime, TS_DATE *pstDate
                 u16After < 150) {
             //this is most likely a 0
             //we do not need to save this value since it is already set
-            _u8DCFBitsRecvd++;
+            ++_u8DCFBitsRecvd;
 
             if (_u8CurrentBit) {
-                _u8CurrentBit--;
+                --_u8CurrentBit;
             } else {
                 _u8CurrentBit = 7;
-                _u8CurrentByte++;
+                ++_u8CurrentByte;
                 _au8DCFData[_u8CurrentByte] = 0;
             }
         } else if (u16After > 150 &&
                 u16After < 250) {
             //this is most likely a 1
-            _u8DCFBitsRecvd++;
+            ++_u8DCFBitsRecvd;
 
             BIT_SET_8(_au8DCFData[_u8CurrentByte], _u8CurrentBit);
 
             if (_u8CurrentBit) {
-                _u8CurrentBit--;
+                --_u8CurrentBit;
             } else {
                 _u8CurrentBit = 7;
-                _u8CurrentByte++;
+                ++_u8CurrentByte;
                 _au8DCFData[_u8CurrentByte] = 0;
             }
         } else {

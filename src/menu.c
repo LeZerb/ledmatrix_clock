@@ -167,7 +167,7 @@ static void enterMainConfig() {
 
     vClearPattern();
     vSetInPattern(0, ROW_CONFIG, 1);
-    for (col = 0; col < NUM_COLS; col++) {
+    for (col = 0; col < NUM_COLS; ++col) {
         vSetInPattern(col, ROW_CORNER_LEDS, 1);
     }
 }
@@ -444,7 +444,7 @@ void eHandleButton(TE_BUTTONS eButton) {
         //the button is handled in this state
         switch (_eCurMenuState) {
             case eMENU_SET_CONFIG_BRIGHTNESS:
-                _brightness++;
+                ++_brightness;
                 if (_brightness > (eCONF_BRIGHTNESS >> eCONF_BRIGHTNESS_SHIFT)) {
                     _brightness = 0;
                 }
@@ -480,7 +480,7 @@ void eHandleButton(TE_BUTTONS eButton) {
 
             case eMENU_SET_DAY:
                 //increment day
-                _date.u8Day++;
+                ++(_date.u8Day);
                 if (_date.u8Day == 32) {
                     _date.u8Day = 1;
                 }
@@ -489,7 +489,7 @@ void eHandleButton(TE_BUTTONS eButton) {
 
             case eMENU_SET_MONTH:
                 //increment month
-                _date.u8Month++;
+                ++(_date.u8Month);
                 if (_date.u8Month == 13) {
                     _date.u8Month = 1;
                 }
@@ -498,7 +498,7 @@ void eHandleButton(TE_BUTTONS eButton) {
 
             case eMENU_SET_YEAR:
                 //increment year
-                _date.u8Year++;
+                ++(_date.u8Year);
                 if (_date.u8Year == 30) {
                     _date.u8Year = 16;
                 }
@@ -507,7 +507,7 @@ void eHandleButton(TE_BUTTONS eButton) {
 
             case eMENU_SET_HOUR:
                 //increment hour
-                _time.u8Hour++;
+                ++(_time.u8Hour);
                 if (_time.u8Hour == 24) {
                     _time.u8Hour = 0;
                 }
@@ -516,7 +516,7 @@ void eHandleButton(TE_BUTTONS eButton) {
 
             case eMENU_SET_MINUTE:
                 //increment minute
-                _time.u8Minute++;
+                ++(_time.u8Minute);
                 if (_time.u8Minute == 60) {
                     _time.u8Minute = 0;
                 }

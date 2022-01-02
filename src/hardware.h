@@ -13,9 +13,10 @@
 
 #define _XTAL_FREQ  (19660800ul)
 
-//WRAPS_A_SEC defines how many timer overflows are in one minute
+//WRAPS_A_SEC defines how many timer overflows are in one second
 //this is dependant on clock frequency and timer prescaler
-#define WRAPS_A_SEC       (75u)
+// _XTAL_FREQ / 4 (T0CS = Fosc/4) / 256 (PS0/1/2 = 1/256) / 256 (8 bit counter)
+#define WRAPS_A_SEC       (75)
 
 //LED matrix
 #define NUM_COLS (11)

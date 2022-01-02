@@ -1,4 +1,4 @@
-#include "../common.h"
+#include "common.h"
 
 //which PINS are to be used as output
 //columns

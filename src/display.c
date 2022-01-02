@@ -8,14 +8,14 @@
 #define ROW_TIME (8 * ROW_TIME_RES) // 1s / 60fps / 12rows = 1389us -> use 1000us
 #define MAX_BRIGHTNESS (eCONF_BRIGHTNESS >> eCONF_BRIGHTNESS_SHIFT)
 
-#define ROW_ON_TIME_0 (1 * ROW_TIME_RES)
-#define ROW_ON_TIME_1 (2 * ROW_TIME_RES)
-#define ROW_ON_TIME_2 (3 * ROW_TIME_RES)
-#define ROW_ON_TIME_3 (4 * ROW_TIME_RES)
-#define ROW_ON_TIME_4 (5 * ROW_TIME_RES)
-#define ROW_ON_TIME_5 (6 * ROW_TIME_RES)
-#define ROW_ON_TIME_6 (7 * ROW_TIME_RES)
-#define ROW_ON_TIME_7 (8 * ROW_TIME_RES)
+static const U16 ROW_ON_TIME_0 = (1 * ROW_TIME_RES);
+static const U16 ROW_ON_TIME_1 = (2 * ROW_TIME_RES);
+static const U16 ROW_ON_TIME_2 = (3 * ROW_TIME_RES);
+static const U16 ROW_ON_TIME_3 = (4 * ROW_TIME_RES);
+static const U16 ROW_ON_TIME_4 = (5 * ROW_TIME_RES);
+static const U16 ROW_ON_TIME_5 = (6 * ROW_TIME_RES);
+static const U16 ROW_ON_TIME_6 = (7 * ROW_TIME_RES);
+static const U16 ROW_ON_TIME_7 = (8 * ROW_TIME_RES);
 
 //typedefs
 
@@ -92,7 +92,7 @@ static const TS_POSITION _astPos[eTEXT_NUM_ENTRIES] = {
         2,
         0b0000011110000000
     },
-    //eFÜNFZEHN
+    //eF"UNFZEHN
     {
         2,
         0b0111111110000000
@@ -409,14 +409,17 @@ static void _vOnOffRow(unsigned char ucRow, U16 ucOn) {
     }
 }
 
+#define ROW_ON_TIME(brightness) (ROW_ON_TIME_##brightness)
+#define ROW_OFF_TIME(brightness) (ROW_TIME - (ROW_ON_TIME_##brightness))
+
 #define ROW_ON_CASE(brightness)              \
     case (brightness):                       \
-        DELAY_US(ROW_ON_TIME_##brightness); \
+        DELAY_US(ROW_ON_TIME(brightness)); \
         break;
 
 #define ROW_OFF_CASE(brightness)                        \
     case (brightness):                                  \
-        DELAY_US(ROW_TIME - ROW_ON_TIME_##brightness); \
+        DELAY_US(ROW_OFF_TIME(brightness)); \
         break;
 
 void vDelayRowOnByBrightness()
@@ -475,28 +478,28 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
 
     config = configGet();
 
-    ucCurrentItem = 0;
+    ucCurrentItem = (U8)-1;
 
     if (config & eCONF_ES_IST) {
-        aucTime[ucCurrentItem++] = eTEXT_ES_IST;
+        aucTime[++ucCurrentItem] = eTEXT_ES_IST;
     }
 
     if (config & eCONF_MITTERNACHT && ucHour == 0 && ucMinute == 0) {
-        aucTime[ucCurrentItem++] = eTEXT_MITTERNACHT;
+        aucTime[++ucCurrentItem] = eTEXT_MITTERNACHT;
     } else if (config & eCONF_NULL && ucHour == 0 && ucMinute < 25) {
-        aucTime[ucCurrentItem++] = eTEXT_NULL_H;
-        aucTime[ucCurrentItem++] = eTEXT_NULL_UHR;
+        aucTime[++ucCurrentItem] = eTEXT_NULL_H;
+        aucTime[++ucCurrentItem] = eTEXT_NULL_UHR;
 
         if (ucMinute < 5) {
             ;
         } else if (ucMinute < 10) {
-            aucTime[ucCurrentItem++] = eTEXT_FUENF;
+            aucTime[++ucCurrentItem] = eTEXT_FUENF;
         } else if (ucMinute < 15) {
-            aucTime[ucCurrentItem++] = eTEXT_ZEHN;
+            aucTime[++ucCurrentItem] = eTEXT_ZEHN;
         } else if (ucMinute < 20) {
-            aucTime[ucCurrentItem++] = eTEXT_FUENFZEHN;
+            aucTime[++ucCurrentItem] = eTEXT_FUENFZEHN;
         } else if (ucMinute < 25) {
-            aucTime[ucCurrentItem++] = eTEXT_ZWANZIG;
+            aucTime[++ucCurrentItem] = eTEXT_ZWANZIG;
         }
     } else {
         unsigned char ucNextHour;
@@ -512,87 +515,90 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
 
         if (ucMinute < 5) {
             if (ucHour == 1) {
-                aucTime[ucCurrentItem++] = eTEXT_EIN_H;
+                aucTime[++ucCurrentItem] = eTEXT_EIN_H;
             } else {
-                aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucHour;
+                aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucHour;
             }
-            aucTime[ucCurrentItem++] = eTEXT_UHR;
+            aucTime[++ucCurrentItem] = eTEXT_UHR;
         } else if (ucMinute < 10) {
-            aucTime[ucCurrentItem++] = eTEXT_FUENF;
-            aucTime[ucCurrentItem++] = eTEXT_NACH;
-            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucHour;
+            aucTime[++ucCurrentItem] = eTEXT_FUENF;
+            aucTime[++ucCurrentItem] = eTEXT_NACH;
+            aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucHour;
         } else if (ucMinute < 15) {
-            aucTime[ucCurrentItem++] = eTEXT_ZEHN;
-            aucTime[ucCurrentItem++] = eTEXT_NACH;
-            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucHour;
+            aucTime[++ucCurrentItem] = eTEXT_ZEHN;
+            aucTime[++ucCurrentItem] = eTEXT_NACH;
+            aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucHour;
         } else if (ucMinute < 20) {
-            aucTime[ucCurrentItem++] = eTEXT_VIERTEL;
+            aucTime[++ucCurrentItem] = eTEXT_VIERTEL;
             if (config & eCONF_VIERTEL_VOR_NACH) {
-                aucTime[ucCurrentItem++] = eTEXT_NACH;
-                aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucHour;
+                aucTime[++ucCurrentItem] = eTEXT_NACH;
+                aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucHour;
             } else {
-                aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
+                aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
             }
         } else if (ucMinute < 25) {
             if (config & eCONF_ZWANZIG_VOR_NACH) {
-                aucTime[ucCurrentItem++] = eTEXT_ZWANZIG;
-                aucTime[ucCurrentItem++] = eTEXT_NACH;
-                aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucHour;
+                aucTime[++ucCurrentItem] = eTEXT_ZWANZIG;
+                aucTime[++ucCurrentItem] = eTEXT_NACH;
+                aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucHour;
             } else {
-                aucTime[ucCurrentItem++] = eTEXT_ZEHN;
-                aucTime[ucCurrentItem++] = eTEXT_VOR;
-                aucTime[ucCurrentItem++] = eTEXT_HALB;
-                aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
+                aucTime[++ucCurrentItem] = eTEXT_ZEHN;
+                aucTime[++ucCurrentItem] = eTEXT_VOR;
+                aucTime[++ucCurrentItem] = eTEXT_HALB;
+                aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
             }
         } else if (ucMinute < 30) {
-            aucTime[ucCurrentItem++] = eTEXT_FUENF;
-            aucTime[ucCurrentItem++] = eTEXT_VOR;
-            aucTime[ucCurrentItem++] = eTEXT_HALB;
-            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[++ucCurrentItem] = eTEXT_FUENF;
+            aucTime[++ucCurrentItem] = eTEXT_VOR;
+            aucTime[++ucCurrentItem] = eTEXT_HALB;
+            aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
         } else if (ucMinute < 35) {
-            aucTime[ucCurrentItem++] = eTEXT_HALB;
-            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[++ucCurrentItem] = eTEXT_HALB;
+            aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
         } else if (ucMinute < 40) {
-            aucTime[ucCurrentItem++] = eTEXT_FUENF;
-            aucTime[ucCurrentItem++] = eTEXT_NACH;
-            aucTime[ucCurrentItem++] = eTEXT_HALB;
-            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[++ucCurrentItem] = eTEXT_FUENF;
+            aucTime[++ucCurrentItem] = eTEXT_NACH;
+            aucTime[++ucCurrentItem] = eTEXT_HALB;
+            aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
         } else if (ucMinute < 45) {
             if (config & eCONF_ZWANZIG_VOR_NACH) {
-                aucTime[ucCurrentItem++] = eTEXT_ZWANZIG;
-                aucTime[ucCurrentItem++] = eTEXT_VOR;
+                aucTime[++ucCurrentItem] = eTEXT_ZWANZIG;
+                aucTime[++ucCurrentItem] = eTEXT_VOR;
             } else {
-                aucTime[ucCurrentItem++] = eTEXT_ZEHN;
-                aucTime[ucCurrentItem++] = eTEXT_NACH;
-                aucTime[ucCurrentItem++] = eTEXT_HALB;
+                aucTime[++ucCurrentItem] = eTEXT_ZEHN;
+                aucTime[++ucCurrentItem] = eTEXT_NACH;
+                aucTime[++ucCurrentItem] = eTEXT_HALB;
             }
-            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
         } else if (ucMinute < 50) {
             if (config & eCONF_VIERTEL_VOR_NACH) {
-                aucTime[ucCurrentItem++] = eTEXT_VIERTEL;
-                aucTime[ucCurrentItem++] = eTEXT_VOR;
+                aucTime[++ucCurrentItem] = eTEXT_VIERTEL;
+                aucTime[++ucCurrentItem] = eTEXT_VOR;
             } else {
-                aucTime[ucCurrentItem++] = eTEXT_DREIVIERTEL;
+                aucTime[++ucCurrentItem] = eTEXT_DREIVIERTEL;
             }
-            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
         } else if (ucMinute < 55) {
-            aucTime[ucCurrentItem++] = eTEXT_ZEHN;
-            aucTime[ucCurrentItem++] = eTEXT_VOR;
-            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[++ucCurrentItem] = eTEXT_ZEHN;
+            aucTime[++ucCurrentItem] = eTEXT_VOR;
+            aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
         } else if (ucMinute < 60) {
-            aucTime[ucCurrentItem++] = eTEXT_FUENF;
-            aucTime[ucCurrentItem++] = eTEXT_VOR;
-            aucTime[ucCurrentItem++] = eTEXT_ZWOELF_H + ucNextHour;
+            aucTime[++ucCurrentItem] = eTEXT_FUENF;
+            aucTime[++ucCurrentItem] = eTEXT_VOR;
+            aucTime[++ucCurrentItem] = eTEXT_ZWOELF_H + ucNextHour;
         }
     }
 
+    //started counting at -1
+    ++ucCurrentItem;
+
     //the last row is following later for minutes 1-4 (border LEDs)
-    for (ucI = 0; ucI < ucCurrentItem; ucI++) {
+    for (ucI = 0; ucI < ucCurrentItem; ++ucI) {
         U8 ucCol, ucRow;
 
         ucRow = _astPos[aucTime[ucI]].u8Row;
 
-        for (ucCol = 0; ucCol < NUM_COLS; ucCol++) {
+        for (ucCol = 0; ucCol < NUM_COLS; ++ucCol) {
             _vOnOffCol(ucCol, (_astPos[aucTime[ucI]].u16Cols & _au16ColBit[ucCol]) ? 1 : 0);
         }
 
@@ -639,7 +645,7 @@ void vWriteTime(TS_TIME *pstTime, TE_CONFIG eeConfig) {
 void vAddTextToPattern(TE_CLOCK_TEXT eText) {
     U8 u8Col;
 
-    for (u8Col = 0; u8Col < NUM_COLS; u8Col++) {
+    for (u8Col = 0; u8Col < NUM_COLS; ++u8Col) {
         if (_astPos[eText].u16Cols & _au16ColBit[u8Col]) {
             _au16Pattern[_astPos[eText].u8Row] |= _au16ColBit[u8Col];
         }
@@ -649,7 +655,7 @@ void vAddTextToPattern(TE_CLOCK_TEXT eText) {
 void vRemoveTextFromPattern(TE_CLOCK_TEXT eText) {
     U8 u8Col;
 
-    for (u8Col = 0; u8Col < NUM_COLS; u8Col++) {
+    for (u8Col = 0; u8Col < NUM_COLS; ++u8Col) {
         if (_astPos[eText].u16Cols & _au16ColBit[u8Col]) {
             _au16Pattern[_astPos[eText].u8Row] &= _au16ColClrBit[u8Col];
         }
@@ -659,9 +665,9 @@ void vRemoveTextFromPattern(TE_CLOCK_TEXT eText) {
 void vTestDisplay(void) {
     U8 u8Row, u8Col;
 
-    for (u8Row = 0; u8Row < NUM_ROWS; u8Row++) {
+    for (u8Row = 0; u8Row < NUM_ROWS; ++u8Row) {
         _vOnOffRow(u8Row, 1);
-        for (u8Col = 0; u8Col < NUM_COLS; u8Col++) {
+        for (u8Col = 0; u8Col < NUM_COLS; ++u8Col) {
             //switch current column on
             _vOnOffCol(u8Col, 1u);
             DELAY_MS(50);
@@ -690,10 +696,10 @@ void vSetInPattern(U8 u8Col, U8 u8Row, U8 u8On) {
 void vAddNumToPattern(U8 u8Num, U8 u8Col, U8 u8Row) {
     U8 u8CurRow, u8CurCol, u8Bit = 15;
 
-    for (u8CurRow = 0; u8CurRow < 5; u8CurRow++) {
-        for (u8CurCol = 0; u8CurCol < 3; u8CurCol++) {
+    for (u8CurRow = 0; u8CurRow < 5; ++u8CurRow) {
+        for (u8CurCol = 0; u8CurCol < 3; ++u8CurCol) {
             vSetInPattern(u8Col + u8CurCol, u8Row + u8CurRow, (_au16Nums[u8Num] >> u8Bit) & 0x1);
-            u8Bit--;
+            --u8Bit;
         }
     }
 }
@@ -701,12 +707,12 @@ void vAddNumToPattern(U8 u8Num, U8 u8Col, U8 u8Row) {
 void vWritePattern() {
     U8 u8Row, u8Col;
 
-    for (u8Row = 0; u8Row < NUM_ROWS; u8Row++) {
+    for (u8Row = 0; u8Row < NUM_ROWS; ++u8Row) {
         if (!_au16Pattern[u8Row]) {
             continue;
         }
 
-        for (u8Col = 0; u8Col < NUM_COLS; u8Col++) {
+        for (u8Col = 0; u8Col < NUM_COLS; ++u8Col) {
             _vOnOffCol(u8Col, (_au16Pattern[u8Row] & _au16ColBit[u8Col]) ? 1u : 0u);
         }
 

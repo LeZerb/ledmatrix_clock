@@ -28,12 +28,12 @@ static TS_TIME _stTime = {0, 0, 0}; //hold the time of the day
 static TS_DATE _stDate = {1, 1, 16}; //hold the current date
 static BOOL _bValidTime = FALSE; //is the time that is currently running valid
 
-static void __interrupt(high_priority) _vInterrupt(void) {
+static void __interrupt _vInterrupt(void) {
     if (T0IF) {
         //we have an interrupt on T0
         T0IF = 0;
 
-        _u8ClkInt++;
+        ++_u8ClkInt;
     }
 
     if (RBIF) {
@@ -81,7 +81,7 @@ static U8 _startMs[eMS_COUNT_NUM] = {0};
 
 U16 msSinceLastStart(TE_MS_COUNT eMsCount) {
     // There is one timer interrupt each 1000 / WRAPS_A_SEC ms
-    return (U16)((((U32)abs((S8) _u8ClkInt - (S8) _startMs[eMsCount])) * 1000ul) / WRAPS_A_SEC);
+    return (U16)((((U32)(_u8ClkInt - _startMs[eMsCount])) * 1000ul) / WRAPS_A_SEC);
 }
 
 void msStart(TE_MS_COUNT eMsCount) {
@@ -120,48 +120,47 @@ void main(void) {
             if (_u8DCFSecs < 4) {
                 //we do not need to increment any further since the delay is already too high
                 //and we do not want to wrap since this might cause issues later
-                _u8DCFSecs++;
+                ++_u8DCFSecs;
             }
 
             //increment time of day
-            _stTime.u8Second++;
+            ++(_stTime.u8Second);
 
             if (_stTime.u8Second >= 60) {
                 //this is a new minute
                 _stTime.u8Second = 0;
-                _stTime.u8Minute++;
-
-                //get the time every night at 4 o'clock even though we have a valid time
-                if (_bValidTime &&
-                        _stTime.u8Hour == 4 &&
-                        _stTime.u8Minute == 0) {
-                    //we need to invalidate the time here
-                    //since showing the current time does not allow correct DCF receiving
-                    //interruptions would disturb the DCF input signals
-                    _bNightlyUpdate = TRUE;
-                    _bValidTime = FALSE;
-                }
+                ++(_stTime.u8Minute);
 
                 if (_stTime.u8Minute >= 60) {
                     //this is a new hour
                     _stTime.u8Minute = 0;
-                    _stTime.u8Hour++;
+                    ++(_stTime.u8Hour);
+
+                    //get the time every night at 4 o'clock even though we have a valid time
+                    if (_bValidTime &&
+                            _stTime.u8Hour == 4 &&
+                            _stTime.u8Minute == 0) {
+                        //we need to invalidate the time here
+                        //since showing the current time does not allow correct DCF reception
+                        //interruptions would disturb the DCF input signals
+                        _bNightlyUpdate = TRUE;
+                        _bValidTime = FALSE;
+                    }
 
                     if (_stTime.u8Hour >= 24) {
                         //a new day has come
                         _stTime.u8Hour = 0;
-
-                        _stDate.u8Day++;
+                        ++(_stDate.u8Day);
 
                         if (!u8IsValidDate(&_stDate)) {
                             //this is most likely a new month
                             _stDate.u8Day = 1;
-                            _stDate.u8Month++;
+                            ++(_stDate.u8Month);
 
                             if (_stDate.u8Month > 12) {
                                 //this is a new year
                                 _stDate.u8Month = 1;
-                                _stDate.u8Year++;
+                                ++(_stDate.u8Year);
                             }
                         }
                     }

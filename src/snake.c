@@ -79,12 +79,12 @@ BOOL snakeRun(TE_BUTTONS button) {
     }
 
     if (button == eBUTTON_MENU) {
-        _snake.headDirection--;
+        --(_snake.headDirection);
         if (_snake.headDirection < eDIR_FIRST) {
             _snake.headDirection = eDIR_LAST;
         }
     } else if (button == eBUTTON_SET) {
-        _snake.headDirection++;
+        ++(_snake.headDirection);
         if (_snake.headDirection > eDIR_LAST) {
             _snake.headDirection = eDIR_FIRST;
         }
@@ -100,28 +100,28 @@ BOOL snakeRun(TE_BUTTONS button) {
 
     switch (_snake.headDirection) {
         case eDIR_LEFT:
-            nextCol--;
+            --nextCol;
             if (nextCol >= SNAKE_COLS) {
                 nextCol = SNAKE_COLS - 1;
             }
             break;
 
         case eDIR_RIGHT:
-            nextCol++;
+            ++nextCol;
             if (nextCol >= SNAKE_COLS) {
                 nextCol = 0;
             }
             break;
 
         case eDIR_UP:
-            nextRow--;
+            --nextRow;
             if (nextRow >= SNAKE_ROWS) {
                 nextRow = SNAKE_ROWS - 1;
             }
             break;
 
         case eDIR_DOWN:
-            nextRow++;
+            ++nextRow;
             if (nextRow >= SNAKE_ROWS) {
                 nextRow = 0;
             }
@@ -138,7 +138,7 @@ BOOL snakeRun(TE_BUTTONS button) {
         //only remove the tail if there is no apple in the same place
         vSetInPattern(_snake.snake[_snake.indexTail].u8Col,
                 _snake.snake[_snake.indexTail].u8Row, 0);
-        _snake.indexTail++;
+        ++(_snake.indexTail);
         if (_snake.indexTail >= MAX_SNAKE_LEN) {
             _snake.indexTail = 0;
         }
@@ -146,7 +146,7 @@ BOOL snakeRun(TE_BUTTONS button) {
 
     //display new head and save
     vSetInPattern(nextCol, nextRow, 1);
-    _snake.indexHead++;
+    ++(_snake.indexHead);
     if (_snake.indexHead >= MAX_SNAKE_LEN) {
         _snake.indexHead = 0;
     }
@@ -155,7 +155,7 @@ BOOL snakeRun(TE_BUTTONS button) {
 
     if (_snake.indexHead == _snake.indexTail) {
         //if tail is reached move tail forward
-        _snake.indexTail++;
+        ++(_snake.indexTail);
         if (_snake.indexTail >= MAX_SNAKE_LEN) {
             _snake.indexTail = 0;
         }
@@ -174,7 +174,7 @@ BOOL snakeRun(TE_BUTTONS button) {
             _gameOver = TRUE;
             break;
         }
-        index++;
+        ++index;
         if (index >= MAX_SNAKE_LEN) {
             index = 0;
         }
