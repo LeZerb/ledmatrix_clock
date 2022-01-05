@@ -2,7 +2,7 @@
 #include "eeprom.h"
 #include "config.h"
 
-#define DEFAULT_CONFIG ((U8)(eCONF_BRIGHTNESS | eCONF_ES_IST))
+#define DEFAULT_CONFIG ((U8)((eCONF_MAX_BRIGHTNESS << eCONF_BRIGHTNESS_SHIFT) | eCONF_ES_IST))
 
 static BOOL _wasLoaded = FALSE;
 static U8 _config = DEFAULT_CONFIG;

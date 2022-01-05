@@ -138,7 +138,7 @@ static TS_TIME _oldTime = {0, 0, 0};
 static TS_TIME _time = {0, 0, 0};
 static TS_DATE _oldDate = {1, 1, 16};
 static TS_DATE _date = {1, 1, 16};
-static U8 _brightness = eCONF_BRIGHTNESS >> eCONF_BRIGHTNESS_SHIFT;
+static U8 _brightness = eCONF_MAX_BRIGHTNESS;
 static U8 _oldConfig = 0;
 static U8 _config = 0;
 static BOOL _timeInvalidate = FALSE;
@@ -158,6 +158,8 @@ static void enterMainInvalidateTime() {
     vClearPattern();
     vSetInPattern(0, ROW_TEST_INVALIDATE_TIME, 1);
 }
+
+#define ROW_BRIGHTNESS (8)
 
 #define ROW_CONFIG (9)
 #define ROW_CORNER_LEDS (NUM_ROWS - 1)
@@ -237,7 +239,21 @@ static void updateYear() {
 }
 
 static void updateConfigBrightness() {
-    vSetBrightness((_config & eCONF_BRIGHTNESS) >> eCONF_BRIGHTNESS_SHIFT);
+    U8 brightnessLed;
+    U8 brightness = (_config >> eCONF_BRIGHTNESS_SHIFT) & eCONF_MAX_BRIGHTNESS;
+    for (brightnessLed = 0; brightnessLed <= eCONF_MAX_BRIGHTNESS; ++brightnessLed)
+    {
+        //Display right aligned brightness in ROW_BRIGHTNESS
+        if (brightnessLed <= brightness)
+        {
+            vSetInPattern(NUM_COLS - (eCONF_MAX_BRIGHTNESS + 1) + brightnessLed, ROW_BRIGHTNESS, 1);
+        }
+        else
+        {
+            vSetInPattern(NUM_COLS - (eCONF_MAX_BRIGHTNESS + 1) + brightnessLed, ROW_BRIGHTNESS, 0);
+        }
+    }
+    vSetBrightness(brightness);
 }
 
 static void updateConfigEsIst() {
@@ -317,11 +333,7 @@ static void enterState(TE_MENU_STATE state) {
             break;
         case eMENU_SET_CONFIG_BRIGHTNESS:
             enterMainConfig();
-            updateConfigEsIst();
-            updateConfigMitternacht();
-            updateConfigNull();
-            updateConfigViertelVor();
-            updateConfigZwanzigVor();
+            updateConfigBrightness();
             vSetInPattern(1, ROW_CONFIG, 1);
             break;
         case eMENU_SET_CONFIG_ES_IST:
@@ -401,7 +413,7 @@ static void leaveState(TE_MENU_STATE state, TE_MENU_STATE newState) {
             case eMENU_NIRVANA:
                 _config = configGet();
                 _oldConfig = _config;
-                _brightness = (_oldConfig & eCONF_BRIGHTNESS) >> eCONF_BRIGHTNESS_SHIFT;
+                _brightness = (_oldConfig >> eCONF_BRIGHTNESS_SHIFT) & eCONF_MAX_BRIGHTNESS;
                 dateGet(&_date);
                 memcpy(&_oldDate, &_date, sizeof (_oldDate));
                 timeGet(&_time);
@@ -445,10 +457,10 @@ void eHandleButton(TE_BUTTONS eButton) {
         switch (_eCurMenuState) {
             case eMENU_SET_CONFIG_BRIGHTNESS:
                 ++_brightness;
-                if (_brightness > (eCONF_BRIGHTNESS >> eCONF_BRIGHTNESS_SHIFT)) {
+                if (_brightness > eCONF_MAX_BRIGHTNESS) {
                     _brightness = 0;
                 }
-                _config &= ~eCONF_BRIGHTNESS;
+                _config &= ~(eCONF_MAX_BRIGHTNESS << eCONF_BRIGHTNESS_SHIFT);
                 _config |= _brightness << eCONF_BRIGHTNESS_SHIFT;
                 updateConfigBrightness();
                 break;

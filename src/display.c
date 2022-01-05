@@ -6,7 +6,6 @@
 //defines
 #define ROW_TIME_RES (125)
 #define ROW_TIME (8 * ROW_TIME_RES) // 1s / 60fps / 12rows = 1389us -> use 1000us
-#define MAX_BRIGHTNESS (eCONF_BRIGHTNESS >> eCONF_BRIGHTNESS_SHIFT)
 
 static const U16 ROW_ON_TIME_0 = (1 * ROW_TIME_RES);
 static const U16 ROW_ON_TIME_1 = (2 * ROW_TIME_RES);
@@ -26,7 +25,7 @@ typedef struct {
 
 //variables
 static U16 _au16Pattern[PATTERN_SIZE];
-static U8 _brightness = MAX_BRIGHTNESS;
+static U8 _brightness = eCONF_MAX_BRIGHTNESS;
 
 static const U16 _au16ColBit[16] = {
     0x8000u,
@@ -726,8 +725,8 @@ void vWritePattern() {
 }
 
 void vSetBrightness(const U8 brightness) {
-    if (brightness > MAX_BRIGHTNESS) {
-        _brightness = MAX_BRIGHTNESS;
+    if (brightness > eCONF_MAX_BRIGHTNESS) {
+        _brightness = eCONF_MAX_BRIGHTNESS;
     }
     else
     {

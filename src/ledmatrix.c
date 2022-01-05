@@ -95,9 +95,9 @@ void main(void) {
     vInit();
 
     _bLastSWMenu = TRUE;
-    _pendingMenu = TRUE;
+    _bLastSWSet  = TRUE;
 
-    vSetBrightness((configGet() & eCONF_BRIGHTNESS) >> eCONF_BRIGHTNESS_SHIFT);
+    vSetBrightness((configGet() >> eCONF_BRIGHTNESS_SHIFT) & eCONF_MAX_BRIGHTNESS);
 
     while (1) {
         static BOOL _bNightlyUpdate = FALSE, //time is invalidated at 4 o'clock - did we have a valid time
@@ -199,13 +199,14 @@ void main(void) {
                 eDCFRc = eDCFAddBit(_bLastDCF, (U16) u32TimeSince, &_stTime, &_stDate);
 
                 if (eDCFRc == eDCF_TIME_SET) {
+                    _bNightlyUpdate = FALSE;
                     _bValidTime = TRUE;
 
                     //disable the DCF receiver
                     DCF_POWER = 0;
                 } else if (_bNightlyUpdate &&
-                        _stTime.u8Hour >= 5) {
-                    //we have tried to update the time for an hour now -> give up
+                             _stTime.u8Minute >= 20) {
+                    //we have tried to update the time for an 20 minutes now -> give up
                     _bNightlyUpdate = FALSE;
                     _bValidTime = TRUE;
                     DCF_POWER = 0;

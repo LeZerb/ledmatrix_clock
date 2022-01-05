@@ -41,7 +41,7 @@ static void _vCalcDate(U8 *pu8DCFData, TS_DATE *pstDate) {
     //0        8        16       24       32       40       48       56
     //0        1        2        3        4        5        6        7
 
-    //bits 36�41 code the day
+    //bits 36-41 code the day
     pstDate->u8Day += (pu8DCFData[4] & 0x08) ? 1 : 0;
     pstDate->u8Day += (pu8DCFData[4] & 0x04) ? 2 : 0;
     pstDate->u8Day += (pu8DCFData[4] & 0x02) ? 4 : 0;
@@ -49,14 +49,14 @@ static void _vCalcDate(U8 *pu8DCFData, TS_DATE *pstDate) {
     pstDate->u8Day += (pu8DCFData[5] & 0x80) ? 10 : 0;
     pstDate->u8Day += (pu8DCFData[5] & 0x40) ? 20 : 0;
 
-    //bits 45�49 code the month
+    //bits 45-49 code the month
     pstDate->u8Month += (pu8DCFData[5] & 0x04) ? 1 : 0;
     pstDate->u8Month += (pu8DCFData[5] & 0x02) ? 2 : 0;
     pstDate->u8Month += (pu8DCFData[5] & 0x01) ? 4 : 0;
     pstDate->u8Month += (pu8DCFData[6] & 0x80) ? 8 : 0;
     pstDate->u8Month += (pu8DCFData[6] & 0x40) ? 10 : 0;
 
-    //bits 50�57 code the year
+    //bits 50-57 code the year
     pstDate->u8Year += (pu8DCFData[6] & 0x20) ? 1 : 0;
     pstDate->u8Year += (pu8DCFData[6] & 0x10) ? 2 : 0;
     pstDate->u8Year += (pu8DCFData[6] & 0x08) ? 4 : 0;

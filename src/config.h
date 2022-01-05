@@ -13,7 +13,7 @@ extern "C" {
         eCONF_ZWANZIG_VOR_NACH = 0x04, //bit 2 identifies zwanzig nach/vor mode
         eCONF_MITTERNACHT      = 0x08, //bit 3 identifies mitternacht enable
         eCONF_NULL             = 0x10, //bit 4 identifies null uhr mode
-        eCONF_BRIGHTNESS       = 0xE0, //3 bits for 8 brightness values
+        eCONF_MAX_BRIGHTNESS   = 7,    //3 bits for 8 brightness values
         eCONF_BRIGHTNESS_SHIFT = 5,    //shift value for brightness setting
         eCONF_VALID            = 0xA5  //byte signifying valid config
     } TE_CONFIG;
